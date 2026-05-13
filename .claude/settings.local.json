@@ -14,7 +14,8 @@
       "PowerShell(try { \"GET /login: $\\(\\(Invoke-WebRequest -Uri http://localhost:8000/login -UseBasicParsing\\).StatusCode\\)\" } catch { \"GET /login: $\\($_.Exception.Response.StatusCode.value__\\) - $\\($_.Exception.Message\\)\" })",
       "PowerShell($html = \\(Invoke-WebRequest -Uri http://localhost:8000/login -UseBasicParsing\\).Content; if \\($html -match 'name=\"email\"' -and $html -match 'name=\"password\"'\\) { \"Form de login renderiza OK\" } else { \"ERROR: form no encontrado\" })",
       "PowerShell(try { $r = Invoke-WebRequest -Uri http://localhost:8000/dashboard -MaximumRedirection 0 -ErrorAction SilentlyContinue -UseBasicParsing; \"GET /dashboard sin sesion: $\\($r.StatusCode\\)\" } catch { \"GET /dashboard sin sesion: $\\($_.Exception.Response.StatusCode.value__\\)\" })",
-      "PowerShell($paths = \\(Invoke-WebRequest -Uri http://localhost:8000/openapi.json -UseBasicParsing | ConvertFrom-Json\\).paths.PSObject.Properties.Name; \"Endpoints: $\\($paths -join ', '\\)\")"
+      "PowerShell($paths = \\(Invoke-WebRequest -Uri http://localhost:8000/openapi.json -UseBasicParsing | ConvertFrom-Json\\).paths.PSObject.Properties.Name; \"Endpoints: $\\($paths -join ', '\\)\")",
+      "PowerShell(Get-Process *)"
     ]
   }
 }

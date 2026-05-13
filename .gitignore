@@ -17,3 +17,7 @@ wheels/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+
+# E2E test artifacts
+tests/uvicorn_e2e.log
+
