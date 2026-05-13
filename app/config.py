@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     SESSION_SECRET_KEY: str
     APP_ENV: str = "development"
+    SESSION_COOKIE_SECURE: bool = False
 
     model_config = SettingsConfigDict(
         env_file=".env",
