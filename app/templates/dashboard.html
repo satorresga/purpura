@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · PÚRPURA{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center gap-3 mb-2">
+    <h1 class="mb-0">Hola, {{ user.full_name }}</h1>
+    <span class="badge badge-rol-{{ user.role.value }} fs-6">{{ user.role.value }}</span>
+</div>
+<div class="accent-line"></div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small">Convocatorias activas</h6>
+                <p class="display-6 mb-0">—</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small">Mis postulaciones</h6>
+                <p class="display-6 mb-0">—</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small">Próximos cierres</h6>
+                <p class="display-6 mb-0">—</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section>
+    <h4>Acciones rápidas</h4>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="/convocatorias" class="btn btn-outline-primary">Ver convocatorias</a>
+        {% if user.role.value in ["coordinador", "administrador"] %}
+        <a href="/convocatorias/crear" class="btn btn-primary">Crear convocatoria</a>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

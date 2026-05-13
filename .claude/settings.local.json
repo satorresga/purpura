@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(uv *)",
+      "PowerShell(docker compose up *)",
+      "PowerShell($env:PGPASSWORD = \"purpura\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\16\\\\bin\\\\psql.exe\" -U purpura -h localhost -d purpura -c \"SELECT current_database\\(\\), current_user, version\\(\\);\")",
+      "PowerShell(New-Item *)",
+      "PowerShell($env:PGPASSWORD = \"purpura\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\16\\\\bin\\\\psql.exe\" -U purpura -h localhost -d purpura -c \"\\\\dt\")",
+      "PowerShell($env:PGPASSWORD = \"purpura\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\16\\\\bin\\\\psql.exe\" -U purpura -h localhost -d purpura -c \"SELECT email, role FROM users ORDER BY role;\")",
+      "PowerShell($env:PGPASSWORD = \"purpura\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\16\\\\bin\\\\psql.exe\" -U purpura -h localhost -d purpura -c \"SELECT codigo, titulo, status FROM convocatorias;\")",
+      "PowerShell(Get-Job *)",
+      "PowerShell(Get-NetTCPConnection *)",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri http://localhost:8000/ -MaximumRedirection 0 -ErrorAction SilentlyContinue -UseBasicParsing; \"GET /: $\\($r.StatusCode\\)\" } catch { \"GET /: $\\($_.Exception.Response.StatusCode.value__\\)\" })",
+      "PowerShell(try { \"GET /login: $\\(\\(Invoke-WebRequest -Uri http://localhost:8000/login -UseBasicParsing\\).StatusCode\\)\" } catch { \"GET /login: $\\($_.Exception.Response.StatusCode.value__\\) - $\\($_.Exception.Message\\)\" })",
+      "PowerShell($html = \\(Invoke-WebRequest -Uri http://localhost:8000/login -UseBasicParsing\\).Content; if \\($html -match 'name=\"email\"' -and $html -match 'name=\"password\"'\\) { \"Form de login renderiza OK\" } else { \"ERROR: form no encontrado\" })",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri http://localhost:8000/dashboard -MaximumRedirection 0 -ErrorAction SilentlyContinue -UseBasicParsing; \"GET /dashboard sin sesion: $\\($r.StatusCode\\)\" } catch { \"GET /dashboard sin sesion: $\\($_.Exception.Response.StatusCode.value__\\)\" })",
+      "PowerShell($paths = \\(Invoke-WebRequest -Uri http://localhost:8000/openapi.json -UseBasicParsing | ConvertFrom-Json\\).paths.PSObject.Properties.Name; \"Endpoints: $\\($paths -join ', '\\)\")"
+    ]
+  }
+}

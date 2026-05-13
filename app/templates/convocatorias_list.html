@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Convocatorias · PÚRPURA{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h2 class="mb-0">Convocatorias</h2>
+    {% if user.role.value in ["coordinador", "administrador"] %}
+    <a href="/convocatorias/crear" class="btn btn-primary">Nueva convocatoria</a>
+    {% endif %}
+</div>
+<div class="accent-line"></div>
+
+{% if convocatorias|length == 0 %}
+<div class="card text-center">
+    <div class="card-body py-5">
+        <p class="mb-0 text-muted">Aún no hay convocatorias publicadas.</p>
+    </div>
+</div>
+{% else %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Título</th>
+                <th>Facultad</th>
+                <th>Asignatura</th>
+                <th class="text-end">Cupos</th>
+                <th>Cierra</th>
+                <th>Estado</th>
+                <th>Creado por</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in convocatorias %}
+            <tr>
+                <td><code>{{ c.codigo }}</code></td>
+                <td>{{ c.titulo }}</td>
+                <td>{{ c.facultad }}</td>
+                <td>{{ c.asignatura }}</td>
+                <td class="text-end">{{ c.cupos }}</td>
+                <td>{{ c.fecha_cierre.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>
+                    {% set s = c.status.value %}
+                    {% if s == 'borrador' %}
+                    <span class="badge bg-secondary">{{ s }}</span>
+                    {% elif s == 'publicada' %}
+                    <span class="badge bg-success">{{ s }}</span>
+                    {% elif s == 'cerrada' %}
+                    <span class="badge bg-dark">{{ s }}</span>
+                    {% else %}
+                    <span class="badge bg-light text-dark">{{ s }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ c.created_by_full_name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

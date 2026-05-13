@@ -1,0 +1,19 @@
+:root {
+  --color-primary: #8B1538;
+  --color-primary-dark: #6E0F2A;
+  --color-accent: #C9A961;
+  --color-bg: #FAFAFA;
+  --color-text: #1A1A1A;
+}
+body { background: var(--color-bg); color: var(--color-text); }
+.navbar { background-color: var(--color-primary) !important; }
+.navbar .navbar-brand, .navbar .nav-link, .navbar .dropdown-toggle { color: #fff !important; }
+.btn-primary { background-color: var(--color-primary); border-color: var(--color-primary); }
+.btn-primary:hover { background-color: var(--color-primary-dark); border-color: var(--color-primary-dark); }
+.btn-outline-primary { color: var(--color-primary); border-color: var(--color-primary); }
+.btn-outline-primary:hover { background-color: var(--color-primary); color: #fff; }
+.badge-rol-administrador { background-color: #dc3545; }
+.badge-rol-coordinador  { background-color: var(--color-primary); }
+.badge-rol-docente      { background-color: #0dcaf0; color:#000; }
+.badge-rol-estudiante   { background-color: #6c757d; }
+.accent-line { height: 3px; background: var(--color-accent); width: 60px; border-radius: 2px; margin-bottom: 1rem; }
