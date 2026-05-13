@@ -21,19 +21,15 @@
                     <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link" href="/convocatorias">Convocatorias</a></li>
                 </ul>
-                <ul class="navbar-nav ms-auto align-items-center">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown">
-                            <span>{{ user.full_name }}</span>
-                            <span class="badge badge-rol-{{ user.role.value }}">{{ user.role.value }}</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li>
-                                <form method="post" action="/logout" class="px-3 py-1 m-0">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger w-100">Cerrar sesión</button>
-                                </form>
-                            </li>
-                        </ul>
+                <ul class="navbar-nav ms-auto align-items-center gap-2">
+                    <li class="nav-item d-flex align-items-center gap-2">
+                        <span class="text-white">{{ user.full_name }}</span>
+                        <span class="badge badge-rol-{{ user.role.value }}">{{ user.role.value }}</span>
+                    </li>
+                    <li class="nav-item">
+                        <form method="post" action="/logout" class="m-0">
+                            <button type="submit" class="btn btn-sm btn-outline-light">Cerrar sesión</button>
+                        </form>
                     </li>
                 </ul>
             </div>

@@ -171,7 +171,6 @@ def test_04_listado(page: Page) -> None:
 
 
 def test_05_logout(page: Page) -> None:
-    page.locator('.navbar .dropdown-toggle').click()
     page.locator('form[action="/logout"] button').click()
     page.wait_for_url("**/login")
     shot(page, "05_logout")
