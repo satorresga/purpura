@@ -1,3 +1,10 @@
+# docker-compose.yml — Proyecto PÚRPURA producción
+# Uso en VPS:
+#   cp .env.prod.example .env
+#   # editar .env con secretos reales
+#   docker compose up -d --build
+#   docker compose run --rm app uv run seed     # solo primera vez
+
 services:
   db:
     image: postgres:16-alpine
@@ -7,15 +14,32 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "5432:5432"
     volumes:
       - purpura_db_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 5
+      start_period: 10s
+    # Sin "ports" — db solo accesible internamente desde la red de Docker.
+
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: purpura_app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      SESSION_SECRET_KEY: ${SESSION_SECRET_KEY}
+      APP_ENV: production
+    ports:
+      - "80:8000"      # Expuesto público en puerto 80, demo por HTTP plano.
 
 volumes:
   purpura_db_data:
+    name: purpura_db_data

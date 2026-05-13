@@ -13,6 +13,12 @@ wheels/
 # Environment / secrets
 .env
 
+# Producción
+deploy/.env
+deploy/.env.*
+!deploy/.env.example
+!deploy/.env.prod.example
+
 # Caches
 .pytest_cache/
 .ruff_cache/
