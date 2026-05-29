@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 80" width="280" height="80">
+  <rect x="0" y="0" width="80" height="80" rx="3" fill="#C2262B"/>
+  <text x="40" y="46" text-anchor="middle"
+        font-family="Helvetica, Arial, sans-serif"
+        font-weight="900" font-size="22"
+        fill="#EABA3D" letter-spacing="1">UdeM</text>
+  <text x="40" y="62" text-anchor="middle"
+        font-family="Helvetica, Arial, sans-serif"
+        font-weight="400" font-size="7"
+        fill="#EABA3D" letter-spacing="0.5">PLACEHOLDER</text>
+  <g transform="translate(96, 22)">
+    <text x="0" y="0"
+          font-family="Helvetica, Arial, sans-serif"
+          font-weight="700" font-size="16"
+          fill="#C2262B">Universidad</text>
+    <text x="0" y="18"
+          font-family="Helvetica, Arial, sans-serif"
+          font-weight="700" font-size="16"
+          fill="#C2262B">de Medellín</text>
+    <text x="0" y="38"
+          font-family="Helvetica, Arial, sans-serif"
+          font-weight="400" font-size="10"
+          fill="#919698" letter-spacing="0.5">Ciencia y Libertad</text>
+  </g>
+</svg>

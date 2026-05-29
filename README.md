@@ -45,5 +45,31 @@ Sin Alembic: el arranque de FastAPI llama `SQLModel.metadata.create_all` + `run_
 (en `app/db.py`), que aplica `ALTER TABLE ADD COLUMN IF NOT EXISTS` sobre `convocatorias`
 y `ALTER TYPE ... ADD VALUE IF NOT EXISTS 'adjudicada'` de forma idempotente.
 
+## Identidad gráfica Universidad de Medellín
+
+El sistema implementa la identidad gráfica oficial de la Universidad de
+Medellín según el manual público de 2022. Variables CSS centralizadas en
+`app/static/css/udem.css`; overrides del módulo en
+`app/static/css/purpura.css`.
+
+**Paleta principal:** rojo institucional `#C2262B`, azul oscuro `#2B445F`,
+oro `#B59D6C`, teal `#60A8A6`.
+
+**Tipografías:** Helvetica Neue / Helvetica para títulos y elementos
+institucionales (con Arial fallback), Open Sans 300/400/600/700 para
+cuerpo de texto (vía Google Fonts).
+
+**Logosímbolo:** el sistema usa un marca-texto placeholder
+(`app/static/images/logosimbolo-udem-placeholder.svg`) mientras se obtiene
+el archivo oficial vía la Oficina de Información y Medios de la UdeM. El
+manual prohíbe la alteración o reproducción no autorizada del escudo.
+Instrucciones de reemplazo en `app/static/images/README.md`.
+
+**Sello obligatorio:** todas las páginas portan el sello
+"Vigilada MinEducación" en el footer institucional según exige el manual.
+
+El CSS del Sprint 1 (`styles.css`) se conserva como
+`app/static/legacy_sprint1.css` sin referencia activa, por trazabilidad.
+
 ## Equipo
 Felipe Cano · José Carlos Jiménez · Santiago Torres · Sebastián Rendón

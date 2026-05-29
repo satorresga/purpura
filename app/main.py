@@ -19,7 +19,14 @@ from app.auth import (
 )
 from app.config import get_settings
 from app.db import get_session, init_db, run_migrations
-from app.models import Convocatoria, ConvocatoriaStatus, User, UserRole
+from app.models import (
+    Convocatoria,
+    ConvocatoriaStatus,
+    Facultad,
+    Materia,
+    User,
+    UserRole,
+)
 
 settings = get_settings()
 
@@ -106,6 +113,9 @@ def login_post(
         )
 
     request.session["user_id"] = str(user.id)
+    request.session["email"] = user.email
+    request.session["nombre_completo"] = user.full_name
+    request.session["rol"] = user.role.value
     user.last_login_at = datetime.utcnow()
     session.add(user)
     session.commit()
@@ -144,24 +154,27 @@ def convocatorias_list(
     session: Session = Depends(get_session),
 ):
     rows = session.exec(
-        select(Convocatoria, User).join(
-            User, Convocatoria.created_by == User.id
-        )
+        select(Convocatoria, User, Facultad, Materia)
+        .join(User, Convocatoria.created_by == User.id)
+        .outerjoin(Facultad, Convocatoria.facultad_id == Facultad.id)
+        .outerjoin(Materia, Convocatoria.materia_id == Materia.id)
     ).all()
     convocatorias = [
         {
             "id": conv.id,
             "codigo": conv.codigo,
             "titulo": conv.titulo,
-            "facultad": conv.facultad,
+            "facultad": facultad_obj,
+            "materia": materia_obj,
             "asignatura": conv.asignatura,
             "cupos": conv.cupos,
+            "semestre": conv.semestre,
             "fecha_apertura": conv.fecha_apertura,
             "fecha_cierre": conv.fecha_cierre,
-            "status": conv.status,
+            "status": conv.status.value if conv.status else None,
             "created_by_full_name": creator.full_name,
         }
-        for conv, creator in rows
+        for conv, creator, facultad_obj, materia_obj in rows
     ]
     return templates.TemplateResponse(
         request,

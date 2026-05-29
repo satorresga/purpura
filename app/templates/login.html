@@ -1,34 +1,37 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% block title %}Iniciar sesión · PÚRPURA{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-5">
-        <div class="card shadow-sm">
-            <div class="card-body p-4">
-                <h2 class="card-title mb-1">Iniciar sesión</h2>
-                <p class="text-muted mb-3">Proyecto PÚRPURA</p>
-                <div class="accent-line"></div>
-
-                {% if error %}
-                <div class="alert alert-danger" role="alert">{{ error }}</div>
-                {% endif %}
-
-                <form method="post" action="/login" novalidate>
-                    <div class="form-floating mb-3">
-                        <input type="email" class="form-control" id="email" name="email" placeholder="correo@udem.edu.co" required autofocus>
-                        <label for="email">Correo electrónico</label>
-                    </div>
-                    <div class="form-floating mb-3">
-                        <input type="password" class="form-control" id="password" name="password" placeholder="Contraseña" required>
-                        <label for="password">Contraseña</label>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Entrar</button>
-                </form>
-            </div>
-            <div class="card-footer text-center text-muted small">
-                Universidad de Medellín — Sistema de Monitorías
-            </div>
-        </div>
+<div class="login-wrapper">
+  <div class="login-card">
+    <div class="marca-institucional">
+      <div class="escudo-grande">UdeM</div>
+      <h1>Universidad de Medellín</h1>
+      <div class="subtitulo">PÚRPURA · Sistema de Monitorías Académicas</div>
     </div>
+
+    {% if error %}
+      <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="/login">
+      <div style="margin-bottom:16px;">
+        <label for="email">Correo institucional</label>
+        <input type="email" id="email" name="email" required autofocus
+               placeholder="usuario@udem.edu.co" style="width:100%;">
+      </div>
+      <div style="margin-bottom:24px;">
+        <label for="password">Contraseña</label>
+        <input type="password" id="password" name="password" required style="width:100%;">
+      </div>
+      <button type="submit" class="btn-udem" style="width:100%; padding:10px;">
+        Ingresar
+      </button>
+    </form>
+
+    <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--udem-gray-dark);">
+      Ciencia y Libertad · Vigilada MinEducación
+    </div>
+  </div>
 </div>
 {% endblock %}

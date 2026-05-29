@@ -1,0 +1,566 @@
+/* ============================================
+   Universidad de Medellín — Identidad gráfica
+   Paleta oficial según manual público 2022
+   ============================================ */
+
+:root {
+  /* Paleta principal */
+  --udem-red: #C2262B;
+  --udem-red-dark: #932428;
+  --udem-gold: #B59D6C;
+  --udem-gold-light: #EABA3D;
+  --udem-blue-dark: #2B445F;
+  --udem-teal: #60A8A6;
+  --udem-teal-light: #8CC0B3;
+  --udem-gray-dark: #919698;
+  --udem-gray-light: #B9B9B8;
+  --udem-cream: #F5F1EC;
+  --udem-white: #FFFFFF;
+
+  /* Colores por facultad — el seed los persiste en facultades.color_hex */
+  --fac-ingenierias: #708F51;
+  --fac-economicas: #497DA0;
+  --fac-derecho: #771F1A;
+  --fac-comunicacion: #52507E;
+  --fac-psicologia: #E4BA35;
+  --fac-computacion: #7EB89B;
+  --fac-diseno: #CF6528;
+
+  /* Tipografía */
+  --font-display: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-body: 'Open Sans', system-ui, -apple-system, Arial, sans-serif;
+
+  /* Tokens */
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-navbar: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* Reset suave */
+body {
+  font-family: var(--font-body);
+  background: var(--udem-cream);
+  color: #212529;
+  margin: 0;
+  line-height: 1.5;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: #212529;
+}
+
+a { color: var(--udem-red); }
+a:hover { color: var(--udem-red-dark); }
+
+/* ============================================
+   Navbar institucional
+   ============================================ */
+.udem-navbar {
+  background: var(--udem-white);
+  border-bottom: 4px solid var(--udem-red);
+  box-shadow: var(--shadow-navbar);
+  padding: 12px 0;
+}
+
+.udem-navbar .container-fluid {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.udem-navbar .logosimbolo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.udem-navbar .logosimbolo .escudo {
+  width: 48px;
+  height: 48px;
+  background: var(--udem-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--udem-gold-light);
+  font-weight: 900;
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  border-radius: var(--radius-sm);
+}
+
+.udem-navbar .marca {
+  line-height: 1.15;
+}
+
+.udem-navbar .marca .titulo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--udem-red);
+  letter-spacing: 0.3px;
+}
+
+.udem-navbar .marca .lema {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 10px;
+  color: var(--udem-gray-dark);
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+.udem-navbar .modulo {
+  border-left: 1px solid var(--udem-gray-light);
+  padding-left: 14px;
+  margin-left: 4px;
+  font-family: var(--font-display);
+}
+
+.udem-navbar .modulo .nombre {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--udem-blue-dark);
+  letter-spacing: 0.3px;
+}
+
+.udem-navbar .modulo .desc {
+  font-size: 10px;
+  color: var(--udem-gray-dark);
+  letter-spacing: 0.3px;
+}
+
+.udem-navbar nav {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.udem-navbar nav a {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--udem-blue-dark);
+  text-decoration: none;
+  padding: 6px 0;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.udem-navbar nav a:hover,
+.udem-navbar nav a.active {
+  color: var(--udem-red);
+  border-bottom-color: var(--udem-red);
+}
+
+.udem-navbar .user-menu {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.udem-navbar .user-menu .rol-badge {
+  background: var(--udem-cream);
+  color: var(--udem-blue-dark);
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* ============================================
+   Botones
+   ============================================ */
+.btn-udem {
+  background: var(--udem-red);
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: background 0.15s;
+}
+.btn-udem:hover { background: var(--udem-red-dark); color: white; }
+
+.btn-udem-outline {
+  background: white;
+  color: var(--udem-blue-dark);
+  border: 1.5px solid var(--udem-blue-dark);
+  padding: 7px 19px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.15s;
+}
+.btn-udem-outline:hover { background: var(--udem-blue-dark); color: white; }
+
+.btn-udem-ghost {
+  background: transparent;
+  color: var(--udem-blue-dark);
+  border: none;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-udem-ghost:hover { background: var(--udem-cream); }
+
+/* ============================================
+   Forms
+   ============================================ */
+.form-control,
+.form-select,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+textarea,
+select {
+  font-family: var(--font-body);
+  border: 1px solid var(--udem-gray-light);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 14px;
+  background: white;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.form-control:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--udem-red);
+  box-shadow: 0 0 0 3px rgba(194, 38, 43, 0.12);
+}
+
+label {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--udem-blue-dark);
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* ============================================
+   Cards de convocatoria
+   ============================================ */
+.conv-card {
+  background: white;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  border-top: 4px solid var(--udem-gray-light);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.conv-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+  transform: translateY(-1px);
+}
+
+.conv-card.fac-ingenierias { border-top-color: var(--fac-ingenierias); }
+.conv-card.fac-economicas { border-top-color: var(--fac-economicas); }
+.conv-card.fac-derecho { border-top-color: var(--fac-derecho); }
+.conv-card.fac-comunicacion { border-top-color: var(--fac-comunicacion); }
+.conv-card.fac-psicologia { border-top-color: var(--fac-psicologia); }
+.conv-card.fac-computacion { border-top-color: var(--fac-computacion); }
+.conv-card.fac-diseno { border-top-color: var(--fac-diseno); }
+
+.conv-card .titulo {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: #212529;
+  margin: 0 0 6px 0;
+}
+
+.conv-card .meta {
+  font-size: 12px;
+  color: var(--udem-gray-dark);
+  margin-bottom: 10px;
+}
+
+.conv-card .meta > span + span::before {
+  content: " · ";
+  margin: 0 4px;
+}
+
+/* ============================================
+   Chips de facultad
+   ============================================ */
+.chip-facultad {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  color: white;
+  background: var(--udem-gray-dark);
+}
+.chip-facultad.fac-ingenierias { background: var(--fac-ingenierias); }
+.chip-facultad.fac-economicas { background: var(--fac-economicas); }
+.chip-facultad.fac-derecho { background: var(--fac-derecho); }
+.chip-facultad.fac-comunicacion { background: var(--fac-comunicacion); }
+.chip-facultad.fac-psicologia { background: var(--fac-psicologia); color: #5C4A0E; }
+.chip-facultad.fac-computacion { background: var(--fac-computacion); }
+.chip-facultad.fac-diseno { background: var(--fac-diseno); }
+
+/* ============================================
+   Badges de estado
+   ============================================ */
+.badge-estado {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  font-family: var(--font-display);
+}
+.badge-borrador   { background: #EEEEEE; color: #555; }
+.badge-publicada  { background: rgba(96,168,166,0.18); color: #1F5D5B; }
+.badge-cerrada    { background: rgba(145,150,152,0.20); color: #555; }
+.badge-archivada  { background: rgba(145,150,152,0.20); color: #555; }
+.badge-adjudicada { background: rgba(181,157,108,0.25); color: #6B5A3F; }
+.badge-enviada    { background: rgba(58,102,170,0.15); color: #2E4F86; }
+.badge-aprobada   { background: rgba(96,168,166,0.20); color: #1F5D5B; }
+.badge-rechazada  { background: rgba(194,38,43,0.12); color: var(--udem-red-dark); }
+.badge-apta       { background: rgba(96,168,166,0.20); color: #1F5D5B; }
+.badge-no-apta    { background: rgba(194,38,43,0.12); color: var(--udem-red-dark); }
+.badge-revisar    { background: rgba(234,186,61,0.25); color: #7A5C12; }
+.badge-pendiente  { background: rgba(145,150,152,0.20); color: #555; }
+.badge-activo     { background: rgba(96,168,166,0.20); color: #1F5D5B; }
+.badge-finalizado { background: #EEEEEE; color: #555; }
+
+/* ============================================
+   Layout
+   ============================================ */
+.udem-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 28px 24px;
+}
+
+.udem-section-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--udem-blue-dark);
+  margin: 0 0 6px 0;
+}
+
+.udem-section-subtitle {
+  font-size: 14px;
+  color: var(--udem-gray-dark);
+  margin-bottom: 24px;
+}
+
+.udem-card {
+  background: white;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 24px;
+}
+
+/* ============================================
+   Tablas
+   ============================================ */
+.udem-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.udem-table thead {
+  background: var(--udem-blue-dark);
+  color: white;
+}
+
+.udem-table th {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.udem-table td {
+  padding: 12px 14px;
+  font-size: 14px;
+  border-top: 1px solid #EAEAEA;
+}
+
+.udem-table tbody tr:hover { background: var(--udem-cream); }
+
+/* ============================================
+   Login screen específico
+   ============================================ */
+.login-wrapper {
+  min-height: calc(100vh - 100px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+}
+
+.login-card {
+  background: white;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  width: 100%;
+  max-width: 420px;
+  padding: 36px 36px 30px;
+  border-top: 4px solid var(--udem-red);
+}
+
+.login-card .marca-institucional {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.login-card .marca-institucional .escudo-grande {
+  width: 64px;
+  height: 64px;
+  background: var(--udem-red);
+  color: var(--udem-gold-light);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
+}
+
+.login-card h1 {
+  font-size: 20px;
+  margin: 0 0 4px 0;
+  color: var(--udem-blue-dark);
+}
+
+.login-card .subtitulo {
+  font-size: 12px;
+  color: var(--udem-gray-dark);
+  letter-spacing: 0.5px;
+}
+
+/* ============================================
+   Footer institucional
+   ============================================ */
+.udem-footer {
+  background: var(--udem-blue-dark);
+  color: rgba(255,255,255,0.85);
+  padding: 32px 0 22px;
+  margin-top: 60px;
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+
+.udem-footer .container-fluid {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.udem-footer .col-info { max-width: 520px; }
+
+.udem-footer .institucion {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: white;
+  margin-bottom: 4px;
+}
+
+.udem-footer .lema {
+  font-family: var(--font-display);
+  font-size: 11px;
+  color: var(--udem-gold-light);
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.udem-footer .vigilada {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: var(--udem-gold-light);
+  font-weight: 700;
+  text-transform: uppercase;
+  border-top: 1px solid rgba(255,255,255,0.15);
+  padding-top: 12px;
+  margin-top: 12px;
+}
+
+.udem-footer .creditos {
+  font-size: 11px;
+  color: rgba(255,255,255,0.6);
+  margin-top: 8px;
+}
+
+.udem-footer .col-modulo {
+  text-align: right;
+}
+
+.udem-footer .col-modulo .modulo-titulo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: white;
+  font-size: 14px;
+}
+
+/* ============================================
+   Alerts / mensajes flash
+   ============================================ */
+.alert {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  margin-bottom: 16px;
+  border-left: 4px solid;
+}
+.alert-success { background: rgba(96,168,166,0.10); border-color: var(--udem-teal); color: #1F5D5B; }
+.alert-danger  { background: rgba(194,38,43,0.08); border-color: var(--udem-red); color: var(--udem-red-dark); }
+.alert-warning { background: rgba(234,186,61,0.12); border-color: var(--udem-gold-light); color: #7A5C12; }
+.alert-info    { background: rgba(58,102,170,0.10); border-color: var(--udem-blue-dark); color: #2E4F86; }

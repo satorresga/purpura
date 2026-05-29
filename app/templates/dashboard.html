@@ -1,46 +1,57 @@
-{% extends "base.html" %}
-{% block title %}Dashboard · PÚRPURA{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Inicio · PÚRPURA{% endblock %}
+
 {% block content %}
-<div class="d-flex align-items-center gap-3 mb-2">
-    <h1 class="mb-0">Hola, {{ user.full_name }}</h1>
-    <span class="badge badge-rol-{{ user.role.value }} fs-6">{{ user.role.value }}</span>
-</div>
-<div class="accent-line"></div>
+<h1 class="dashboard-greeting">Hola, {{ request.session.get('nombre_completo', 'usuario') }}</h1>
+<p class="dashboard-subgreeting">
+  Bienvenido al Sistema de Gestión de Monitorías Académicas de la Universidad de Medellín.
+</p>
 
-<div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h6 class="text-muted text-uppercase small">Convocatorias activas</h6>
-                <p class="display-6 mb-0">—</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h6 class="text-muted text-uppercase small">Mis postulaciones</h6>
-                <p class="display-6 mb-0">—</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h6 class="text-muted text-uppercase small">Próximos cierres</h6>
-                <p class="display-6 mb-0">—</p>
-            </div>
-        </div>
-    </div>
+{% set rol = request.session.get('rol') %}
+
+<div class="dashboard-quick-actions">
+  {% if rol in ['administrador', 'coordinador'] %}
+    <a href="/convocatorias" class="dashboard-quick-action">
+      <div class="label">Convocatorias</div>
+      <div class="desc">Crear, publicar y gestionar convocatorias de monitoría</div>
+    </a>
+  {% endif %}
+
+  {% if rol == 'estudiante' %}
+    <a href="/convocatorias-abiertas" class="dashboard-quick-action">
+      <div class="label">Convocatorias abiertas</div>
+      <div class="desc">Explorar las monitorías disponibles para postular</div>
+    </a>
+    <a href="/mis-postulaciones" class="dashboard-quick-action">
+      <div class="label">Mis postulaciones</div>
+      <div class="desc">Ver el estado de tus postulaciones enviadas</div>
+    </a>
+    <a href="/mis-monitorias" class="dashboard-quick-action">
+      <div class="label">Mis monitorías</div>
+      <div class="desc">Monitorías académicas que tienes adjudicadas</div>
+    </a>
+  {% endif %}
+
+  {% if rol in ['administrador', 'coordinador'] %}
+    <a href="/reportes" class="dashboard-quick-action">
+      <div class="label">Reportes</div>
+      <div class="desc">Indicadores y exportables de convocatorias y adjudicaciones</div>
+    </a>
+  {% endif %}
+
+  {% if rol == 'administrador' %}
+    <a href="/admin/panel" class="dashboard-quick-action">
+      <div class="label">Panel de administración</div>
+      <div class="desc">Vista global del sistema con métricas en tiempo real</div>
+    </a>
+  {% endif %}
 </div>
 
-<section>
-    <h4>Acciones rápidas</h4>
-    <div class="d-flex flex-wrap gap-2">
-        <a href="/convocatorias" class="btn btn-outline-primary">Ver convocatorias</a>
-        {% if user.role.value in ["coordinador", "administrador"] %}
-        <a href="/convocatorias/crear" class="btn btn-primary">Crear convocatoria</a>
-        {% endif %}
-    </div>
-</section>
+<div class="udem-card" style="margin-top:24px;">
+  <h2 style="margin:0 0 8px 0; font-size:18px; color:var(--udem-blue-dark);">Tu sesión</h2>
+  <p style="font-size:13px; color:var(--udem-gray-dark); margin:0;">
+    Estás autenticado como <strong>{{ request.session.get('email') }}</strong>
+    con rol <strong>{{ rol }}</strong>.
+  </p>
+</div>
 {% endblock %}

@@ -1,61 +1,54 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% from '_macros.html' import badge_estado, chip_facultad %}
 {% block title %}Convocatorias · PÚRPURA{% endblock %}
-{% block content %}
-<div class="d-flex justify-content-between align-items-center mb-2">
-    <h2 class="mb-0">Convocatorias</h2>
-    {% if user.role.value in ["coordinador", "administrador"] %}
-    <a href="/convocatorias/crear" class="btn btn-primary">Nueva convocatoria</a>
-    {% endif %}
-</div>
-<div class="accent-line"></div>
 
-{% if convocatorias|length == 0 %}
-<div class="card text-center">
-    <div class="card-body py-5">
-        <p class="mb-0 text-muted">Aún no hay convocatorias publicadas.</p>
-    </div>
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:18px;">
+  <div>
+    <h1 class="udem-section-title">Convocatorias</h1>
+    <p class="udem-section-subtitle">
+      {% if request.session.get('rol') == 'administrador' %}
+        Vista global de todas las convocatorias del sistema.
+      {% else %}
+        Convocatorias creadas por tu coordinación.
+      {% endif %}
+    </p>
+  </div>
+  {% if request.session.get('rol') in ['administrador', 'coordinador'] %}
+    <a href="/convocatorias/nueva" class="btn-udem">+ Nueva convocatoria</a>
+  {% endif %}
 </div>
+
+{% if convocatorias %}
+<table class="udem-table">
+  <thead>
+    <tr>
+      <th>Código</th>
+      <th>Título</th>
+      <th>Facultad</th>
+      <th>Semestre</th>
+      <th>Estado</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for c in convocatorias %}
+    <tr>
+      <td><code>{{ c.codigo }}</code></td>
+      <td><strong>{{ c.titulo }}</strong></td>
+      <td>{{ chip_facultad(c.facultad) }}</td>
+      <td>{{ c.semestre or '—' }}</td>
+      <td>{{ badge_estado(c.status) }}</td>
+      <td>
+        <a href="/convocatorias/{{ c.id }}" class="btn-udem-ghost">Ver</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 {% else %}
-<div class="table-responsive">
-    <table class="table table-hover align-middle">
-        <thead>
-            <tr>
-                <th>Código</th>
-                <th>Título</th>
-                <th>Facultad</th>
-                <th>Asignatura</th>
-                <th class="text-end">Cupos</th>
-                <th>Cierra</th>
-                <th>Estado</th>
-                <th>Creado por</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for c in convocatorias %}
-            <tr>
-                <td><code>{{ c.codigo }}</code></td>
-                <td>{{ c.titulo }}</td>
-                <td>{{ c.facultad }}</td>
-                <td>{{ c.asignatura }}</td>
-                <td class="text-end">{{ c.cupos }}</td>
-                <td>{{ c.fecha_cierre.strftime('%d/%m/%Y %H:%M') }}</td>
-                <td>
-                    {% set s = c.status.value %}
-                    {% if s == 'borrador' %}
-                    <span class="badge bg-secondary">{{ s }}</span>
-                    {% elif s == 'publicada' %}
-                    <span class="badge bg-success">{{ s }}</span>
-                    {% elif s == 'cerrada' %}
-                    <span class="badge bg-dark">{{ s }}</span>
-                    {% else %}
-                    <span class="badge bg-light text-dark">{{ s }}</span>
-                    {% endif %}
-                </td>
-                <td>{{ c.created_by_full_name }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="udem-card">
+  <p style="margin:0; color:var(--udem-gray-dark);">No hay convocatorias para mostrar.</p>
 </div>
 {% endif %}
 {% endblock %}

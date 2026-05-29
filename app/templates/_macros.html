@@ -1,0 +1,43 @@
+{# Macro: chip de facultad con color institucional.
+   `facultad` puede ser un objeto Facultad o None (convocatorias legacy
+   Sprint 1 quedan sin facultad_id). #}
+{% macro chip_facultad(facultad) -%}
+  {% if facultad %}
+    <span class="chip-facultad fac-{{ facultad.codigo }}">{{ facultad.nombre }}</span>
+  {% endif %}
+{%- endmacro %}
+
+{# Macro: badge de estado. Normaliza el valor del enum a la clase CSS.
+   Acepta tanto el string crudo ("publicada") como el .value del enum. #}
+{% macro badge_estado(estado) -%}
+  {% set cls = (estado or 'pendiente') | lower | replace('_', '-') %}
+  <span class="badge-estado badge-{{ cls }}">{{ (estado or 'PENDIENTE') | upper }}</span>
+{%- endmacro %}
+
+{# Macro: card de convocatoria con borde superior color de facultad.
+   La ruta debe pasar `conv.facultad` como objeto Facultad y `conv.materia`
+   como objeto Materia (no como strings legacy). #}
+{% macro card_convocatoria(conv) -%}
+  {% set fac_class = 'fac-' ~ conv.facultad.codigo if conv.facultad else '' %}
+  <article class="conv-card {{ fac_class }}">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+      <div style="flex:1;">
+        <h3 class="titulo">{{ conv.titulo }}</h3>
+        <div class="meta">
+          {{ chip_facultad(conv.facultad) }}
+          {% if conv.materia %}<span>{{ conv.materia.codigo }} — {{ conv.materia.nombre }}</span>{% endif %}
+          {% if conv.semestre %}<span>{{ conv.semestre }}</span>{% endif %}
+        </div>
+      </div>
+      <div>{{ badge_estado(conv.status) }}</div>
+    </div>
+    {% if conv.fecha_cierre %}
+      <div style="font-size:12px; color:var(--udem-gray-dark); margin-top:8px;">
+        Cierra: {{ conv.fecha_cierre.strftime('%d %b %Y') }}
+      </div>
+    {% endif %}
+    <div style="margin-top:14px;">
+      <a href="/convocatorias/{{ conv.id }}" class="btn-udem-outline" style="font-size:13px; padding:5px 14px;">Ver detalle</a>
+    </div>
+  </article>
+{%- endmacro %}

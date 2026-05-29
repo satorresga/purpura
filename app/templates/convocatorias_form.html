@@ -1,107 +1,105 @@
 {% extends "base.html" %}
 {% block title %}Nueva convocatoria · PÚRPURA{% endblock %}
 {% block content %}
-<div class="card">
-    <div class="card-body p-4">
-        <h2 class="mb-1">Nueva convocatoria</h2>
-        <div class="accent-line"></div>
+<h1 class="udem-section-title">Nueva convocatoria</h1>
+<p class="udem-section-subtitle">Completá los datos básicos. Los requisitos numéricos son opcionales.</p>
 
-        {% if error %}
-        <div class="alert alert-danger" role="alert">{{ error }}</div>
-        {% endif %}
+<div class="udem-card">
+    {% if error %}
+    <div class="alert alert-danger" role="alert">{{ error }}</div>
+    {% endif %}
 
-        <form method="post" action="/convocatorias/crear" novalidate
-              x-data="{
-                  apertura: '{{ form.fecha_apertura or '' }}',
-                  cierre: '{{ form.fecha_cierre or '' }}',
-                  get fechasOk() {
-                      if (!this.apertura || !this.cierre) return true;
-                      return new Date(this.cierre) > new Date(this.apertura);
-                  }
-              }">
+    <form method="post" action="/convocatorias/crear" novalidate
+          x-data="{
+              apertura: '{{ form.fecha_apertura or '' }}',
+              cierre: '{{ form.fecha_cierre or '' }}',
+              get fechasOk() {
+                  if (!this.apertura || !this.cierre) return true;
+                  return new Date(this.cierre) > new Date(this.apertura);
+              }
+          }">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label for="codigo">Código</label>
+                <input type="text" class="form-control" id="codigo" name="codigo"
+                       placeholder="MON-2026-01-CALC1"
+                       pattern="^MON-\d{4}-\d{2}-[A-Z0-9]+$"
+                       value="{{ form.codigo or '' }}"
+                       required>
+            </div>
+            <div class="col-md-8">
+                <label for="titulo">Título</label>
+                <input type="text" class="form-control" id="titulo" name="titulo" maxlength="255"
+                       value="{{ form.titulo or '' }}" required>
+            </div>
+
+            <div class="col-md-6">
+                <label for="facultad">Facultad</label>
+                <select class="form-select" id="facultad" name="facultad" required>
+                    {% set sel = form.facultad or '' %}
+                    <option value="" disabled {% if not sel %}selected{% endif %}>Seleccione…</option>
+                    {% for f in ['Ingeniería', 'Comunicaciones', 'Derecho', 'Económicas', 'Salud', 'Educación', 'Otra'] %}
+                    <option value="{{ f }}" {% if sel == f %}selected{% endif %}>{{ f }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label for="asignatura">Asignatura</label>
+                <input type="text" class="form-control" id="asignatura" name="asignatura" maxlength="255"
+                       value="{{ form.asignatura or '' }}" required>
+            </div>
+
+            <div class="col-12">
+                <label for="descripcion">Descripción</label>
+                <textarea class="form-control" id="descripcion" name="descripcion" rows="3">{{ form.descripcion or '' }}</textarea>
+            </div>
+
+            <div class="col-md-3">
+                <label for="cupos">Cupos</label>
+                <input type="number" class="form-control" id="cupos" name="cupos" min="1"
+                       value="{{ form.cupos or 1 }}" required>
+            </div>
+            <div class="col-md-4">
+                <label for="fecha_apertura">Fecha apertura</label>
+                <input type="datetime-local" class="form-control" id="fecha_apertura" name="fecha_apertura"
+                       x-model="apertura" required>
+            </div>
+            <div class="col-md-5">
+                <label for="fecha_cierre">Fecha cierre</label>
+                <input type="datetime-local" class="form-control" id="fecha_cierre" name="fecha_cierre"
+                       x-model="cierre" :class="{ 'is-invalid': !fechasOk }" required>
+                <div class="invalid-feedback" x-show="!fechasOk">
+                    La fecha de cierre debe ser posterior a la de apertura.
+                </div>
+            </div>
+        </div>
+
+        <fieldset style="border:1px solid var(--udem-gray-light); border-radius:var(--radius-sm); padding:14px 18px; margin-top:20px;">
+            <legend style="float:none; width:auto; padding:0 8px; font-size:12px; color:var(--udem-gray-dark); text-transform:uppercase; letter-spacing:0.5px;">Requisitos (opcional)</legend>
             <div class="row g-3">
                 <div class="col-md-4">
-                    <label for="codigo" class="form-label">Código</label>
-                    <input type="text" class="form-control" id="codigo" name="codigo"
-                           placeholder="MON-2026-01-CALC1"
-                           pattern="^MON-\d{4}-\d{2}-[A-Z0-9]+$"
-                           value="{{ form.codigo or '' }}"
-                           required>
-                </div>
-                <div class="col-md-8">
-                    <label for="titulo" class="form-label">Título</label>
-                    <input type="text" class="form-control" id="titulo" name="titulo" maxlength="255"
-                           value="{{ form.titulo or '' }}" required>
-                </div>
-
-                <div class="col-md-6">
-                    <label for="facultad" class="form-label">Facultad</label>
-                    <select class="form-select" id="facultad" name="facultad" required>
-                        {% set sel = form.facultad or '' %}
-                        <option value="" disabled {% if not sel %}selected{% endif %}>Seleccione…</option>
-                        {% for f in ['Ingeniería', 'Comunicaciones', 'Derecho', 'Económicas', 'Salud', 'Educación', 'Otra'] %}
-                        <option value="{{ f }}" {% if sel == f %}selected{% endif %}>{{ f }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-6">
-                    <label for="asignatura" class="form-label">Asignatura</label>
-                    <input type="text" class="form-control" id="asignatura" name="asignatura" maxlength="255"
-                           value="{{ form.asignatura or '' }}" required>
-                </div>
-
-                <div class="col-12">
-                    <label for="descripcion" class="form-label">Descripción</label>
-                    <textarea class="form-control" id="descripcion" name="descripcion" rows="3">{{ form.descripcion or '' }}</textarea>
-                </div>
-
-                <div class="col-md-3">
-                    <label for="cupos" class="form-label">Cupos</label>
-                    <input type="number" class="form-control" id="cupos" name="cupos" min="1"
-                           value="{{ form.cupos or 1 }}" required>
+                    <label for="promedio_minimo">Promedio mínimo</label>
+                    <input type="number" class="form-control" id="promedio_minimo" name="promedio_minimo"
+                           step="0.1" min="0" max="5"
+                           value="{{ form.promedio_minimo or '' }}">
                 </div>
                 <div class="col-md-4">
-                    <label for="fecha_apertura" class="form-label">Fecha apertura</label>
-                    <input type="datetime-local" class="form-control" id="fecha_apertura" name="fecha_apertura"
-                           x-model="apertura" required>
+                    <label for="creditos_minimos">Créditos mínimos</label>
+                    <input type="number" class="form-control" id="creditos_minimos" name="creditos_minimos"
+                           min="0" value="{{ form.creditos_minimos or '' }}">
                 </div>
-                <div class="col-md-5">
-                    <label for="fecha_cierre" class="form-label">Fecha cierre</label>
-                    <input type="datetime-local" class="form-control" id="fecha_cierre" name="fecha_cierre"
-                           x-model="cierre" :class="{ 'is-invalid': !fechasOk }" required>
-                    <div class="invalid-feedback" x-show="!fechasOk">
-                        La fecha de cierre debe ser posterior a la de apertura.
-                    </div>
+                <div class="col-md-4">
+                    <label for="semestre_minimo">Semestre mínimo</label>
+                    <input type="number" class="form-control" id="semestre_minimo" name="semestre_minimo"
+                           min="1" max="12" value="{{ form.semestre_minimo or '' }}">
                 </div>
             </div>
+        </fieldset>
 
-            <fieldset class="border rounded p-3 mt-4">
-                <legend class="float-none w-auto px-2 fs-6 text-muted">Requisitos (opcional)</legend>
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label for="promedio_minimo" class="form-label">Promedio mínimo</label>
-                        <input type="number" class="form-control" id="promedio_minimo" name="promedio_minimo"
-                               step="0.1" min="0" max="5"
-                               value="{{ form.promedio_minimo or '' }}">
-                    </div>
-                    <div class="col-md-4">
-                        <label for="creditos_minimos" class="form-label">Créditos mínimos</label>
-                        <input type="number" class="form-control" id="creditos_minimos" name="creditos_minimos"
-                               min="0" value="{{ form.creditos_minimos or '' }}">
-                    </div>
-                    <div class="col-md-4">
-                        <label for="semestre_minimo" class="form-label">Semestre mínimo</label>
-                        <input type="number" class="form-control" id="semestre_minimo" name="semestre_minimo"
-                               min="1" max="12" value="{{ form.semestre_minimo or '' }}">
-                    </div>
-                </div>
-            </fieldset>
-
-            <div class="d-flex justify-content-end gap-2 mt-4">
-                <a href="/convocatorias" class="btn btn-secondary">Cancelar</a>
-                <button type="submit" class="btn btn-primary" :disabled="!fechasOk">Crear</button>
-            </div>
-        </form>
-    </div>
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:24px;">
+            <a href="/convocatorias" class="btn-udem-outline">Cancelar</a>
+            <button type="submit" class="btn-udem" :disabled="!fechasOk">Crear convocatoria</button>
+        </div>
+    </form>
 </div>
 {% endblock %}
