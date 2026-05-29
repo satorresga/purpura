@@ -12,11 +12,17 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from sqlalchemy import text as sa_text
 
+from app.services.adjudicacion import (
+    AdjudicacionInvalidaError,
+    adjudicar_convocatoria,
+)
 from app.services.evaluacion_ia import evaluar_postulacion
 from app.services.transiciones import (
+    POST_APROBADA,
     POST_CANCELADA,
     POST_EN_REVISION,
     POST_ENVIADA,
+    POST_RECHAZADA,
     PermisoInsuficienteError,
     TransicionInvalidaError,
     transicionar_estado,
@@ -491,6 +497,33 @@ def convocatorias_detalle(
         )
     )
 
+    monitores_info = None
+    if conv.status == ConvocatoriaStatus.ADJUDICADA:
+        from app.models import Monitor
+
+        monitor_rows = session.exec(
+            select(Monitor, User)
+            .join(User, Monitor.estudiante_id == User.id)
+            .where(Monitor.convocatoria_id == conv.id)
+            .order_by(Monitor.fecha_adjudicacion.desc())
+        ).all()
+        total = len(monitor_rows)
+        if user.role in (UserRole.ADMINISTRADOR, UserRole.COORDINADOR):
+            monitores_info = {
+                "total": total,
+                "lista": [
+                    {
+                        "nombre": est.full_name or est.email,
+                        "email": est.email,
+                        "fecha": m.fecha_adjudicacion,
+                        "postulacion_id": m.postulacion_id,
+                    }
+                    for m, est in monitor_rows
+                ],
+            }
+        else:
+            monitores_info = {"total": total, "lista": None}
+
     postulacion_activa: Optional[Postulacion] = None
     postulacion_historica: Optional[Postulacion] = None
     puede_postular = False
@@ -530,6 +563,7 @@ def convocatorias_detalle(
             "postulacion_historica": postulacion_historica,
             "puede_postular": puede_postular,
             "puede_cancelar_postulacion": puede_cancelar_postulacion,
+            "monitores_info": monitores_info,
         },
     )
 
@@ -1144,14 +1178,12 @@ def postulacion_detalle(
     session: Session = Depends(get_session),
 ):
     post, conv, estudiante = _load_postulacion_or_404(session, post_id, user)
-    puede_iniciar_revision = post.estado == POST_ENVIADA and (
-        user.role == UserRole.ADMINISTRADOR
-        or conv.created_by == user.id
+    es_owner_o_admin = (
+        user.role == UserRole.ADMINISTRADOR or conv.created_by == user.id
     )
-    puede_anotar = post.estado == POST_EN_REVISION and (
-        user.role == UserRole.ADMINISTRADOR
-        or conv.created_by == user.id
-    )
+    puede_iniciar_revision = post.estado == POST_ENVIADA and es_owner_o_admin
+    puede_anotar = post.estado == POST_EN_REVISION and es_owner_o_admin
+    puede_decidir = post.estado == POST_EN_REVISION and es_owner_o_admin
     return templates.TemplateResponse(
         request,
         "postulacion_detalle.html",
@@ -1162,6 +1194,7 @@ def postulacion_detalle(
             "estudiante": estudiante,
             "puede_iniciar_revision": puede_iniciar_revision,
             "puede_anotar": puede_anotar,
+            "puede_decidir": puede_decidir,
         },
     )
 
@@ -1179,9 +1212,17 @@ def postulacion_transicionar(
 ):
     post, conv, estudiante = _load_postulacion_or_404(session, post_id, user)
     estado_origen = post.estado
+    nuevo_norm = nuevo_estado.upper()
+    if nuevo_norm == POST_RECHAZADA and not (motivo or "").strip():
+        _flash(
+            request,
+            "danger",
+            "El motivo es obligatorio al rechazar una postulación.",
+        )
+        return RedirectResponse(f"/postulaciones/{post.id}", status_code=303)
     try:
         transicionar_postulacion(
-            post, nuevo_estado.upper(), user, conv, motivo=motivo
+            post, nuevo_norm, user, conv, motivo=motivo
         )
     except TransicionInvalidaError as e:
         _flash(request, "danger", f"Transición no permitida: {e}")
@@ -1261,4 +1302,127 @@ def postulacion_nota(
     )
     _flash(request, "success", "Nota agregada al historial.")
     return RedirectResponse(f"/postulaciones/{post.id}", status_code=303)
+
+
+# ============================================================
+# Adjudicación batch (P06)
+# ============================================================
+
+
+def _load_aprobadas_de_convocatoria(
+    session: Session, conv_id: uuid.UUID
+) -> list[tuple[Postulacion, User]]:
+    rows = session.exec(
+        select(Postulacion, User)
+        .join(User, Postulacion.estudiante_id == User.id)
+        .where(Postulacion.convocatoria_id == conv_id)
+        .where(Postulacion.estado == POST_APROBADA)
+        .order_by(Postulacion.created_at.asc())
+    ).all()
+    return [(post, est) for post, est in rows]
+
+
+@app.get("/convocatorias/{conv_id}/adjudicar")
+def convocatorias_adjudicar_get(
+    request: Request,
+    conv_id: uuid.UUID,
+    user: User = Depends(require_role(UserRole.ADMINISTRADOR)),
+    session: Session = Depends(get_session),
+):
+    conv, _creator, _f, _m = _load_convocatoria_or_404(session, conv_id)
+    if conv.status != ConvocatoriaStatus.CERRADA:
+        _flash(
+            request,
+            "warning",
+            "Cierre la convocatoria primero antes de adjudicar.",
+        )
+        return RedirectResponse(f"/convocatorias/{conv.id}", status_code=303)
+
+    rows = _load_aprobadas_de_convocatoria(session, conv.id)
+    aprobadas = [
+        {
+            "id": post.id,
+            "estudiante_nombre": est.full_name or est.email,
+            "estudiante_email": est.email,
+            "promedio": post.promedio_acumulado,
+            "evaluacion": post.evaluacion_ia_ultima,
+        }
+        for post, est in rows
+    ]
+    return templates.TemplateResponse(
+        request,
+        "convocatorias_adjudicar.html",
+        {
+            "user": user,
+            "convocatoria": conv,
+            "aprobadas": aprobadas,
+        },
+    )
+
+
+@app.post("/convocatorias/{conv_id}/adjudicar")
+def convocatorias_adjudicar_post(
+    request: Request,
+    conv_id: uuid.UUID,
+    seleccionadas: list[int] = Form(default=[]),
+    user: User = Depends(require_role(UserRole.ADMINISTRADOR)),
+    session: Session = Depends(get_session),
+):
+    conv, _creator, _f, _m = _load_convocatoria_or_404(session, conv_id)
+    rows = _load_aprobadas_de_convocatoria(session, conv.id)
+    postulaciones_aprobadas = [post for post, _ in rows]
+
+    try:
+        monitores, resumen = adjudicar_convocatoria(
+            conv, postulaciones_aprobadas, seleccionadas, user
+        )
+    except AdjudicacionInvalidaError as e:
+        session.rollback()
+        _flash(request, "danger", f"No se pudo adjudicar: {e}")
+        return RedirectResponse(
+            f"/convocatorias/{conv.id}/adjudicar", status_code=303
+        )
+    except (TransicionInvalidaError, PermisoInsuficienteError) as e:
+        session.rollback()
+        _flash(request, "danger", f"Error en transición batch: {e}")
+        return RedirectResponse(
+            f"/convocatorias/{conv.id}/adjudicar", status_code=303
+        )
+
+    for post in postulaciones_aprobadas:
+        session.add(post)
+    for monitor in monitores:
+        session.add(monitor)
+    session.add(conv)
+
+    try:
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        _flash(request, "danger", f"Error al persistir la adjudicación: {e}")
+        return RedirectResponse(
+            f"/convocatorias/{conv.id}/adjudicar", status_code=303
+        )
+
+    log_audit(
+        session,
+        user_id=user.id,
+        action="ADJUDICAR_CONVOCATORIA",
+        request=request,
+        entity_type="convocatoria",
+        entity_id=conv.id,
+        payload={
+            "codigo": conv.codigo,
+            "adjudicadas": resumen["adjudicadas"],
+            "no_adjudicadas": resumen["no_adjudicadas"],
+            "cupos_libres": resumen["cupos_libres"],
+        },
+    )
+    _flash(
+        request,
+        "success",
+        f"Adjudicación completada: {resumen['adjudicadas']} monitores asignados, "
+        f"{resumen['no_adjudicadas']} no adjudicadas.",
+    )
+    return RedirectResponse(f"/convocatorias/{conv.id}", status_code=303)
 

@@ -160,9 +160,43 @@
     {% endif %}
   </div>
 
-  {% if puede_iniciar_revision or puede_anotar %}
+  {% if puede_iniciar_revision or puede_anotar or puede_decidir %}
   <div class="udem-card" style="border-left:4px solid var(--udem-rojo);">
     <h3 style="margin:0 0 12px 0; font-size:15px; color:var(--udem-negro); font-family:var(--font-display);">Acciones</h3>
+
+    {% if puede_decidir %}
+      {% if postulacion.evaluacion_ia_ultima %}
+        {% set ev = postulacion.evaluacion_ia_ultima %}
+        {% set conf_pct = (ev.confianza * 100) | round(0, 'floor') | int %}
+        <div style="padding:10px 12px; background:var(--udem-crema); border-radius:4px; font-size:13px; color:var(--udem-gris-texto); margin-bottom:14px;">
+          <strong style="color:var(--udem-negro);">Sugerencia IA:</strong>
+          <span data-sugerencia-ia="{{ ev.decision_sugerida }}">{{ ev.decision_sugerida }}</span>
+          con <strong>{{ conf_pct }}%</strong> de confianza
+          {% if ev.modo == 'fallback' %}<em>(modo fallback — sin LLM)</em>{% endif %}.
+        </div>
+      {% else %}
+        <div style="padding:10px 12px; background:var(--udem-crema); border-radius:4px; font-size:13px; color:var(--udem-gris-claro); margin-bottom:14px;">
+          Sin sugerencia IA disponible para esta postulación.
+        </div>
+      {% endif %}
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
+        <form method="post" action="/postulaciones/{{ postulacion.id }}/transicionar" style="margin:0;">
+          <input type="hidden" name="nuevo_estado" value="APROBADA">
+          <label for="motivo-aprobar" style="font-size:12px; color:var(--udem-gris-texto);">Motivo de aprobación (opcional)</label>
+          <textarea id="motivo-aprobar" name="motivo" rows="2" style="width:100%; margin-top:4px;" placeholder="Ej: cumple requisitos según sugerencia IA"></textarea>
+          <button type="submit" class="btn-udem" data-accion="aprobar" style="background:var(--udem-teal); margin-top:8px;">Aprobar</button>
+        </form>
+
+        <form method="post" action="/postulaciones/{{ postulacion.id }}/transicionar" style="margin:0;">
+          <input type="hidden" name="nuevo_estado" value="RECHAZADA">
+          <label for="motivo-rechazar" style="font-size:12px; color:var(--udem-gris-texto);">Motivo de rechazo (<strong style="color:var(--udem-rojo);">obligatorio</strong>)</label>
+          <textarea id="motivo-rechazar" name="motivo" rows="2" style="width:100%; margin-top:4px;" placeholder="Ej: no cumple el promedio mínimo requerido" required minlength="3"></textarea>
+          <button type="submit" class="btn-udem" data-accion="rechazar" style="background:var(--udem-rojo); margin-top:8px;">Rechazar</button>
+        </form>
+      </div>
+    {% endif %}
+
     {% if puede_iniciar_revision %}
       <form method="post" action="/postulaciones/{{ postulacion.id }}/transicionar" style="margin:0 0 12px 0;">
         <input type="hidden" name="nuevo_estado" value="EN_REVISION">
@@ -170,11 +204,11 @@
         <button type="submit" class="btn-udem" data-accion="iniciar-revision">Empezar revisión</button>
       </form>
       <p style="font-size:12px; color:var(--udem-gris-texto); margin:0;">
-        La postulación pasa a <strong>EN_REVISION</strong>. La decisión final (aprobar/rechazar) viene en una iteración posterior del sistema.
+        La postulación pasa a <strong>EN_REVISION</strong>. Después podrás aprobar o rechazar con motivo.
       </p>
     {% endif %}
     {% if puede_anotar %}
-      <form method="post" action="/postulaciones/{{ postulacion.id }}/nota">
+      <form method="post" action="/postulaciones/{{ postulacion.id }}/nota" style="margin-top:14px;">
         <label for="nota" style="font-size:13px; color:var(--udem-gris-texto);">Agregar nota privada al historial</label>
         <textarea id="nota" name="nota" rows="3" style="width:100%; margin-top:6px;" placeholder="Comentario interno (no visible para el estudiante)" required></textarea>
         <div style="margin-top:10px;">

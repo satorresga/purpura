@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Adjudicar {{ convocatoria.codigo }} · PÚRPURA{% endblock %}
+
+{% block content %}
+<a href="/convocatorias/{{ convocatoria.id }}" style="font-size:13px; color:var(--udem-gris-texto); text-decoration:none;">&larr; Volver al detalle</a>
+<h1 class="udem-section-title" style="margin-top:6px;">Adjudicar convocatoria</h1>
+<p class="udem-section-subtitle">
+  <code>{{ convocatoria.codigo }}</code> · {{ convocatoria.titulo }} · semestre {{ convocatoria.semestre }}
+</p>
+
+<div class="udem-card" style="margin-bottom:18px; border-left:4px solid var(--udem-rojo);">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div>
+      <div style="font-size:11px; color:var(--udem-gris-texto); text-transform:uppercase; letter-spacing:0.05em;">Cupos disponibles</div>
+      <div style="font-family:var(--font-display); font-size:32px; font-weight:800; color:var(--udem-rojo);" data-cupos-info="{{ convocatoria.cupos }}">{{ convocatoria.cupos }}</div>
+    </div>
+    <div>
+      <div style="font-size:11px; color:var(--udem-gris-texto); text-transform:uppercase; letter-spacing:0.05em;">Postulaciones aprobadas</div>
+      <div style="font-family:var(--font-display); font-size:32px; font-weight:800; color:var(--udem-azul);">{{ aprobadas | length }}</div>
+    </div>
+    <div>
+      <div style="font-size:11px; color:var(--udem-gris-texto); text-transform:uppercase; letter-spacing:0.05em;">Seleccionadas</div>
+      <div id="contador-seleccionadas" style="font-family:var(--font-display); font-size:32px; font-weight:800; color:var(--udem-teal);" data-seleccionadas="0">0</div>
+    </div>
+  </div>
+  <p style="margin:14px 0 0; font-size:13px; color:var(--udem-gris-texto);">
+    Las marcadas pasan a <strong>ADJUDICADA</strong> y generan un Monitor activo.
+    Las no marcadas pasan a <strong>NO_ADJUDICADA</strong>. La convocatoria pasa a <strong>ADJUDICADA</strong>.
+    Esta acción es <strong>atómica e irreversible</strong>.
+  </p>
+</div>
+
+<form method="post" action="/convocatorias/{{ convocatoria.id }}/adjudicar" id="form-adjudicar">
+  {% if aprobadas %}
+  <table class="udem-table" style="margin-bottom:18px;">
+    <thead>
+      <tr>
+        <th style="width:60px;">Adjudicar</th>
+        <th>Estudiante</th>
+        <th>Promedio declarado</th>
+        <th>Sugerencia IA</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in aprobadas %}
+      <tr data-aprobada-id="{{ p.id }}">
+        <td style="text-align:center;">
+          <input type="checkbox" name="seleccionadas" value="{{ p.id }}" class="check-adjudicar" data-cupos-max="{{ convocatoria.cupos }}">
+        </td>
+        <td>
+          <strong>{{ p.estudiante_nombre }}</strong><br>
+          <span style="font-size:12px; color:var(--udem-gris-texto);">{{ p.estudiante_email }}</span>
+        </td>
+        <td>
+          {% if p.promedio and p.promedio > 0 %}
+            <strong>{{ '%.2f'|format(p.promedio) }}</strong>
+          {% else %}
+            <span style="color:var(--udem-gris-claro);">no registrado</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if p.evaluacion %}
+            <span data-decision="{{ p.evaluacion.decision_sugerida }}" style="font-size:11px; font-weight:700; letter-spacing:0.05em;">
+              {{ p.evaluacion.decision_sugerida }}
+            </span>
+            <span style="font-size:11px; color:var(--udem-gris-texto);">
+              ({{ (p.evaluacion.confianza * 100) | round(0, 'floor') | int }}%)
+            </span>
+          {% else %}
+            <span style="color:var(--udem-gris-claro); font-size:11px;">sin evaluación</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="udem-card" style="margin-bottom:18px;">
+    <p style="margin:0; color:var(--udem-gris-texto);">
+      No hay postulaciones aprobadas. Podés confirmar adjudicación con 0 monitores asignados — la convocatoria pasa a ADJUDICADA igualmente.
+    </p>
+  </div>
+  {% endif %}
+
+  <div style="display:flex; justify-content:space-between; gap:10px; align-items:center;">
+    <a href="/convocatorias/{{ convocatoria.id }}" class="btn-udem-outline">Cancelar</a>
+    <button type="submit" class="btn-udem" data-accion="confirmar-adjudicacion">
+      Confirmar adjudicación
+    </button>
+  </div>
+</form>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const contador = document.getElementById("contador-seleccionadas");
+    const checks = document.querySelectorAll(".check-adjudicar");
+    const cuposMax = parseInt("{{ convocatoria.cupos }}", 10);
+
+    function actualizar() {
+      const seleccionadas = document.querySelectorAll(".check-adjudicar:checked").length;
+      contador.textContent = seleccionadas;
+      contador.setAttribute("data-seleccionadas", seleccionadas);
+      checks.forEach(ch => {
+        if (!ch.checked) {
+          ch.disabled = seleccionadas >= cuposMax;
+        }
+      });
+    }
+    checks.forEach(ch => ch.addEventListener("change", actualizar));
+    actualizar();
+  });
+</script>
+{% endblock %}

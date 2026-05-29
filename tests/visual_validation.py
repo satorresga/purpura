@@ -14,6 +14,8 @@ import asyncio
 import os
 import re
 import sys
+import time
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from playwright.async_api import async_playwright, expect
@@ -939,6 +941,271 @@ async def main():
             record(
                 "V44",
                 "Bandeja filtro ?ia=revisar muestra solo REVISAR_MANUAL",
+                False,
+                str(e)[:80],
+            )
+
+        # ============================================
+        # ESCENARIO 13 — Decisión final (P06)
+        # ============================================
+        print("\n  Escenario 13 — Aprobar/Rechazar/Adjudicar (P06)")
+        scratch_code = f"MON-2026-99-S{int(time.time()) % 100000:05d}"
+        apertura = datetime.now().strftime("%Y-%m-%dT%H:%M")
+        cierre = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%dT%H:%M")
+
+        conv_scratch_id = None
+        post_id_v45 = None
+        post_id_v46 = None
+
+        try:
+            await logout(page)
+            await login(page, *USERS["admin"])
+            await page.request.post(
+                f"{BASE_URL}/convocatorias/crear",
+                form={
+                    "codigo": scratch_code,
+                    "titulo": f"Smoke scratch P06 {scratch_code}",
+                    "descripcion": "Convocatoria efimera para smoke V45-V48",
+                    "facultad": "Ingeniería",
+                    "asignatura": "Smoke",
+                    "cupos": "2",
+                    "fecha_apertura": apertura,
+                    "fecha_cierre": cierre,
+                },
+            )
+            await page.goto(f"{BASE_URL}/convocatorias")
+            await page.wait_for_load_state("domcontentloaded")
+            fila_scratch = page.locator(
+                f"tr[data-conv-id]:has(code:has-text('{scratch_code}'))"
+            ).first
+            conv_scratch_id = await fila_scratch.get_attribute("data-conv-id")
+            await page.request.post(
+                f"{BASE_URL}/convocatorias/{conv_scratch_id}/transicionar",
+                form={"nuevo_estado": "PUBLICADA", "motivo": "smoke P06"},
+            )
+        except Exception as e:
+            print(f"    (V45 setup conv falló) {str(e)[:80]}")
+
+        try:
+            await logout(page)
+            await login(page, *USERS["estudiante"])
+            await page.goto(f"{BASE_URL}/mis-postulaciones")
+            await page.wait_for_load_state("domcontentloaded")
+            filas_activas = await page.locator(
+                "tr[data-postulacion-id][data-postulacion-estado='ENVIADA'], "
+                "tr[data-postulacion-id][data-postulacion-estado='EN_REVISION']"
+            ).all()
+            for fila in filas_activas:
+                pid = await fila.get_attribute("data-postulacion-id")
+                if pid:
+                    await page.request.post(
+                        f"{BASE_URL}/postulaciones/{pid}/cancelar"
+                    )
+            if conv_scratch_id:
+                await page.request.post(
+                    f"{BASE_URL}/convocatorias/{conv_scratch_id}/postular",
+                    form={"motivacion": "smoke V45 estudiante1"},
+                )
+        except Exception as e:
+            print(f"    (V45 setup postular est1 falló) {str(e)[:80]}")
+
+        try:
+            await logout(page)
+            await login(page, *USERS["admin"])
+            await page.goto(
+                f"{BASE_URL}/bandeja?estado=enviada&convocatoria={conv_scratch_id}"
+            )
+            await page.wait_for_load_state("domcontentloaded")
+            href = await page.locator(
+                "tr[data-postulacion-id] a[href^='/postulaciones/']"
+            ).first.get_attribute("href")
+            if href:
+                post_id_v45 = int(href.rstrip("/").split("/")[-1])
+                await page.request.post(
+                    f"{BASE_URL}/postulaciones/{post_id_v45}/transicionar",
+                    form={
+                        "nuevo_estado": "EN_REVISION",
+                        "motivo": "smoke V45 setup",
+                    },
+                )
+
+            await page.goto(f"{BASE_URL}/postulaciones/{post_id_v45}")
+            await page.wait_for_load_state("domcontentloaded")
+            await page.locator("#motivo-aprobar").fill(
+                "Smoke aprueba con motivo opcional"
+            )
+            await page.locator(
+                "button[data-accion='aprobar']"
+            ).first.click()
+            await page.wait_for_load_state("domcontentloaded")
+            aprobadas = await page.locator(
+                "[data-postulacion-estado='APROBADA']"
+            ).count()
+            record(
+                "V45",
+                "Aprobar postulación EN_REVISION (motivo opcional)",
+                aprobadas >= 1,
+                f"badges_aprobada={aprobadas} post_id={post_id_v45}",
+            )
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "45_postulacion_aprobada.png"),
+                full_page=False,
+            )
+        except Exception as e:
+            record(
+                "V45",
+                "Aprobar postulación EN_REVISION (motivo opcional)",
+                False,
+                str(e)[:80],
+            )
+
+        try:
+            await logout(page)
+            await login(page, *USERS["admin"])
+            if conv_scratch_id:
+                await logout(page)
+                await login(page, "estudiante2@udem.edu.co", "Estudiante2026!")
+                await page.request.post(
+                    f"{BASE_URL}/convocatorias/{conv_scratch_id}/postular",
+                    form={"motivacion": "smoke V46 estudiante2"},
+                )
+                await logout(page)
+                await login(page, *USERS["admin"])
+                await page.goto(
+                    f"{BASE_URL}/bandeja?estado=enviada&convocatoria={conv_scratch_id}"
+                )
+                await page.wait_for_load_state("domcontentloaded")
+                href6 = await page.locator(
+                    "tr[data-postulacion-id] a[href^='/postulaciones/']"
+                ).first.get_attribute("href")
+                if href6:
+                    post_id_v46 = int(href6.rstrip("/").split("/")[-1])
+                    await page.request.post(
+                        f"{BASE_URL}/postulaciones/{post_id_v46}/transicionar",
+                        form={
+                            "nuevo_estado": "EN_REVISION",
+                            "motivo": "smoke V46 setup",
+                        },
+                    )
+            resp_sin_motivo = await page.request.post(
+                f"{BASE_URL}/postulaciones/{post_id_v46}/transicionar",
+                form={"nuevo_estado": "RECHAZADA", "motivo": ""},
+                max_redirects=0,
+            )
+            await page.goto(f"{BASE_URL}/postulaciones/{post_id_v46}")
+            await page.wait_for_load_state("domcontentloaded")
+            alert_danger = await page.locator(".alert-danger").count()
+            sigue_en_revision = await page.locator(
+                "[data-postulacion-estado='EN_REVISION']"
+            ).count()
+
+            await page.locator("#motivo-rechazar").fill(
+                "Smoke rechaza con motivo obligatorio"
+            )
+            await page.locator(
+                "button[data-accion='rechazar']"
+            ).first.click()
+            await page.wait_for_load_state("domcontentloaded")
+            rechazadas = await page.locator(
+                "[data-postulacion-estado='RECHAZADA']"
+            ).count()
+            ok = (
+                resp_sin_motivo.status in (303, 400, 422)
+                and alert_danger >= 1
+                and sigue_en_revision >= 1
+                and rechazadas >= 1
+            )
+            record(
+                "V46",
+                "Rechazar exige motivo (sin motivo falla, con motivo OK)",
+                ok,
+                (
+                    f"sin_motivo_status={resp_sin_motivo.status} "
+                    f"alert_danger={alert_danger} "
+                    f"sigue_en_rev={sigue_en_revision} rechazadas={rechazadas}"
+                ),
+            )
+        except Exception as e:
+            record(
+                "V46",
+                "Rechazar exige motivo (sin motivo falla, con motivo OK)",
+                False,
+                str(e)[:80],
+            )
+
+        try:
+            if conv_scratch_id:
+                await page.request.post(
+                    f"{BASE_URL}/convocatorias/{conv_scratch_id}/transicionar",
+                    form={"nuevo_estado": "CERRADA", "motivo": "smoke V47"},
+                )
+                await page.goto(
+                    f"{BASE_URL}/convocatorias/{conv_scratch_id}/adjudicar"
+                )
+                await page.wait_for_load_state("domcontentloaded")
+                await page.wait_for_selector("h1", timeout=8000)
+                checkboxes = await page.locator(
+                    "input[type='checkbox'][name='seleccionadas']"
+                ).count()
+                cupos_info = await page.locator(
+                    "[data-cupos-info]"
+                ).count()
+                contador = await page.locator(
+                    "#contador-seleccionadas"
+                ).count()
+                ok = checkboxes >= 1 and cupos_info >= 1 and contador >= 1
+                record(
+                    "V47",
+                    "Admin: form adjudicar muestra checkboxes + contador",
+                    ok,
+                    f"checks={checkboxes} cupos_info={cupos_info} contador={contador}",
+                )
+                await page.screenshot(
+                    path=str(SCREENSHOTS_LANDING_DIR / "47_adjudicar.png"),
+                    full_page=False,
+                )
+            else:
+                record(
+                    "V47",
+                    "Admin: form adjudicar muestra checkboxes + contador",
+                    False,
+                    "conv_scratch_id no obtenido",
+                )
+        except Exception as e:
+            record(
+                "V47",
+                "Admin: form adjudicar muestra checkboxes + contador",
+                False,
+                str(e)[:80],
+            )
+
+        try:
+            check = page.locator(
+                "input[type='checkbox'][name='seleccionadas']"
+            ).first
+            await check.check()
+            await page.locator(
+                "button[data-accion='confirmar-adjudicacion']"
+            ).click()
+            await page.wait_for_load_state("domcontentloaded")
+            await page.wait_for_selector("h1", timeout=8000)
+            adjudicada = await page.locator(
+                "[data-convocatoria-estado='ADJUDICADA']"
+            ).count()
+            record(
+                "V48",
+                "Batch adjudicar transiciona convocatoria a ADJUDICADA",
+                adjudicada >= 1,
+                f"badges_adjudicada={adjudicada}",
+            )
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "48_convocatoria_adjudicada.png"),
+                full_page=False,
+            )
+        except Exception as e:
+            record(
+                "V48",
+                "Batch adjudicar transiciona convocatoria a ADJUDICADA",
                 False,
                 str(e)[:80],
             )

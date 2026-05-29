@@ -76,6 +76,45 @@
   {% endif %}
 </div>
 
+{% if monitores_info %}
+<div class="udem-card" style="margin-bottom:18px; border-left:4px solid var(--udem-teal);" data-convocatoria-estado="{{ convocatoria.status.value | upper }}">
+  <h3 style="margin:0 0 8px 0; font-size:15px; color:var(--udem-negro); font-family:var(--font-display);">Resumen de adjudicación</h3>
+  <p style="margin:0 0 12px 0; font-size:14px;">
+    <strong>Adjudicada</strong> · {{ monitores_info.total }} {{ 'monitor' if monitores_info.total == 1 else 'monitores' }} asignados
+    {% if convocatoria.cupos and monitores_info.total < convocatoria.cupos %}
+      <span style="color:var(--udem-gris-texto);">({{ convocatoria.cupos - monitores_info.total }} cupos libres)</span>
+    {% endif %}
+  </p>
+  {% if monitores_info.lista is not none %}
+    {% if monitores_info.lista %}
+    <ul style="margin:0; padding-left:20px; font-size:13px;">
+      {% for m in monitores_info.lista %}
+        <li>
+          <strong>{{ m.nombre }}</strong>
+          <span style="color:var(--udem-gris-texto);"> — {{ m.email }}</span>
+          <span style="color:var(--udem-gris-claro); font-size:11px;"> · adjudicada el {{ m.fecha.strftime('%d %b %Y') }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p style="margin:0; font-size:13px; color:var(--udem-gris-claro);">No quedaron postulaciones adjudicadas en esta convocatoria.</p>
+    {% endif %}
+  {% else %}
+  <p style="margin:0; font-size:12px; color:var(--udem-gris-claro);">Los nombres de los monitores no son visibles para tu rol.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if user.role.value == 'administrador' and convocatoria.status.value == 'cerrada' %}
+<div class="udem-card" style="margin-bottom:18px; border-left:4px solid var(--udem-dorado);">
+  <h3 style="margin:0 0 8px 0; font-size:15px; color:var(--udem-negro); font-family:var(--font-display);">Convocatoria cerrada — pendiente de adjudicar</h3>
+  <p style="margin:0 0 12px 0; font-size:13px; color:var(--udem-gris-texto);">
+    Define la lista final de monitores adjudicados de entre las postulaciones aprobadas.
+  </p>
+  <a href="/convocatorias/{{ convocatoria.id }}/adjudicar" class="btn-udem" data-accion="ir-adjudicar">Adjudicar ahora</a>
+</div>
+{% endif %}
+
 {% if user.role.value == 'estudiante' %}
 <div class="udem-card" style="border-left:4px solid var(--udem-teal); margin-bottom:18px;">
   {% if puede_postular %}
