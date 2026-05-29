@@ -20,7 +20,9 @@
 <header class="udem-navbar">
   <div class="container-fluid">
     <div style="display:flex; align-items:center; gap:14px;">
-      <a href="/" class="logosimbolo">
+      <a href="{% if request.session.get('user_id') %}/dashboard{% else %}/{% endif %}"
+         class="logosimbolo"
+         title="Ir al inicio">
         <img src="{{ url_for('static', path='images/logosimbolo-udem-color.png') }}"
              alt="Universidad de Medellín · Ciencia y Libertad"
              height="50"

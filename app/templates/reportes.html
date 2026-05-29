@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Reportes · PÚRPURA{% endblock %}
+{% block main_class %}{% endblock %}
+
+{% block content %}
+<section class="hero-rojo">
+  <div class="contenedor">
+    <div class="breadcrumb">PANEL DE COORDINACIÓN</div>
+    <h1>Reportes</h1>
+    <p class="descripcion">
+      Indicadores y exportaciones del sistema de monitorías.
+    </p>
+  </div>
+</section>
+
+<section class="contenedor" style="padding: 80px 24px; text-align: center;">
+  <div style="max-width: 520px; margin: 0 auto;">
+    <div style="font-size: 3rem; margin-bottom: 16px;">📊</div>
+    <h2 style="color: var(--udem-rojo); font-family: var(--font-display); font-weight: 700; margin-bottom: 12px;">
+      Módulo en construcción
+    </h2>
+    <p style="color: var(--udem-gris-texto); line-height: 1.6; margin-bottom: 32px;">
+      El módulo de reportes está planeado para la siguiente iteración del sistema
+      (Release 2). Incluirá exportación a CSV de postulaciones, indicadores de
+      adjudicación por convocatoria y trazabilidad por facultad.
+    </p>
+    <a href="/dashboard" class="btn-iniciar-sesion" style="text-decoration: none;">
+      Volver al dashboard
+    </a>
+  </div>
+</section>
+{% endblock %}

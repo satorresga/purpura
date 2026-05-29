@@ -55,6 +55,13 @@
     const tabs = document.querySelectorAll(".role-tab");
     const hidden = document.getElementById("rol_preferido");
     const card = document.querySelector(".login-card-con-tabs");
+    const emailInput = document.getElementById("email");
+
+    const PLACEHOLDERS = {
+      estudiante:    "ej. estudiante@udem.edu.co",
+      coordinador:   "ej. coordinador@udem.edu.co",
+      administrador: "ej. admin@udem.edu.co"
+    };
 
     function setActive(rol) {
       tabs.forEach(t => t.removeAttribute("data-active"));
@@ -62,6 +69,9 @@
       if (target) target.setAttribute("data-active", "true");
       if (hidden) hidden.value = rol;
       if (card) card.setAttribute("data-rol-activo", rol);
+      if (emailInput && PLACEHOLDERS[rol]) {
+        emailInput.placeholder = PLACEHOLDERS[rol];
+      }
     }
 
     tabs.forEach(t => t.addEventListener("click", () => setActive(t.dataset.rol)));
@@ -70,6 +80,8 @@
     const rolUrl = params.get("rol");
     if (rolUrl && ["estudiante", "coordinador", "administrador"].includes(rolUrl)) {
       setActive(rolUrl);
+    } else if (hidden && hidden.value) {
+      setActive(hidden.value);
     }
   });
 </script>

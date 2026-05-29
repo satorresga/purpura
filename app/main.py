@@ -129,6 +129,21 @@ def documentacion(request: Request):
     )
 
 
+@app.get("/reportes")
+def reportes(
+    request: Request,
+    user: User = Depends(
+        require_role(UserRole.COORDINADOR, UserRole.ADMINISTRADOR)
+    ),
+):
+    """Stub honesto: el módulo de reportes está planeado para R2 (P08)."""
+    return templates.TemplateResponse(
+        request,
+        "reportes.html",
+        {"user": user},
+    )
+
+
 @app.post("/login")
 def login_post(
     request: Request,
