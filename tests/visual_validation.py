@@ -1448,6 +1448,118 @@ async def main():
                 str(e)[:80],
             )
 
+        # ============================================
+        # ESCENARIO 16 — Reportes + CSV (P08)
+        # ============================================
+        print("\n  Escenario 16 — Reportes KPIs + CSV + ACL coord")
+        try:
+            await logout(page)
+            await login(page, *USERS["admin"])
+            await page.goto(f"{BASE_URL}/reportes")
+            await page.wait_for_load_state("domcontentloaded")
+            await page.wait_for_selector("h1", timeout=8000)
+            h1 = await page.locator("h1").first.text_content() or ""
+            kpis = await page.locator(".kpi-card").count()
+            filas_facultad = await page.locator(
+                ".tabla-reportes tbody tr[data-facultad-id]"
+            ).count()
+            filas_conv = await page.locator(
+                ".tabla-reportes tbody tr[data-conv-id]"
+            ).count()
+            ok = (
+                "report" in h1.lower()
+                and kpis == 4
+                and (filas_facultad >= 1 or filas_conv >= 1)
+            )
+            record(
+                "V54",
+                "Admin: /reportes con 4 KPIs y tablas pobladas",
+                ok,
+                f"h1='{h1.strip()}' kpis={kpis} facultades={filas_facultad} convs={filas_conv}",
+            )
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "54_reportes_admin.png"),
+                full_page=True,
+            )
+        except Exception as e:
+            record(
+                "V54",
+                "Admin: /reportes con 4 KPIs y tablas pobladas",
+                False,
+                str(e)[:80],
+            )
+
+        try:
+            resp = await page.request.get(
+                f"{BASE_URL}/reportes/csv/postulaciones"
+            )
+            cuerpo_csv = await resp.text()
+            content_type = resp.headers.get("content-type", "")
+            disposition = resp.headers.get("content-disposition", "")
+            tiene_bom = cuerpo_csv.startswith("﻿")
+            tiene_headers = "estudiante_email" in cuerpo_csv
+            tiene_filas = cuerpo_csv.strip().count("\n") >= 1
+            ok = (
+                resp.status == 200
+                and "text/csv" in content_type
+                and "postulaciones_" in disposition
+                and tiene_bom
+                and tiene_headers
+                and tiene_filas
+            )
+            record(
+                "V55",
+                "CSV postulaciones: 200 + BOM + header + filas",
+                ok,
+                (
+                    f"status={resp.status} bom={tiene_bom} header={tiene_headers} "
+                    f"filas={tiene_filas} type_ok={'text/csv' in content_type}"
+                ),
+            )
+        except Exception as e:
+            record(
+                "V55",
+                "CSV postulaciones: 200 + BOM + header + filas",
+                False,
+                str(e)[:80],
+            )
+
+        kpis_admin = {}
+        try:
+            kpis_nums = await page.locator(".kpi-numero").all_text_contents()
+            kpis_admin = [s.strip() for s in kpis_nums]
+        except Exception:
+            pass
+
+        try:
+            await logout(page)
+            await login(page, *USERS["coord"])
+            await page.goto(f"{BASE_URL}/reportes")
+            await page.wait_for_load_state("domcontentloaded")
+            await page.wait_for_selector("h1", timeout=8000)
+            kpis_coord_count = await page.locator(".kpi-card").count()
+            nota_coord_visible = await page.locator(
+                "text=Solo se muestran datos de tus convocatorias"
+            ).count()
+            ok = kpis_coord_count == 4 and nota_coord_visible >= 1
+            record(
+                "V56",
+                "Coord: /reportes accesible con nota ACL + 4 KPIs",
+                ok,
+                f"kpis={kpis_coord_count} nota_acl={nota_coord_visible}",
+            )
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "56_reportes_coord.png"),
+                full_page=False,
+            )
+        except Exception as e:
+            record(
+                "V56",
+                "Coord: /reportes accesible con nota ACL + 4 KPIs",
+                False,
+                str(e)[:80],
+            )
+
         await browser.close()
 
     # ============================================

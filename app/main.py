@@ -1,10 +1,10 @@
 import re
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 
-from fastapi import Depends, FastAPI, Form, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi import Depends, FastAPI, Form, HTTPException, Query, Request
+from fastapi.responses import RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
@@ -18,6 +18,14 @@ from app.services.adjudicacion import (
 )
 from app.services.evaluacion_ia import evaluar_postulacion
 from app.services.notificar import crear_notificacion
+from app.services.reportes import (
+    exportar_convocatorias_csv,
+    exportar_monitores_csv,
+    exportar_postulaciones_csv,
+    kpis_globales,
+    metricas_por_convocatoria,
+    metricas_por_facultad,
+)
 from app.services.transiciones import (
     POST_APROBADA,
     POST_CANCELADA,
@@ -212,19 +220,134 @@ def documentacion(request: Request):
     )
 
 
+def _parse_date_opt(s: Optional[str]) -> Optional[date]:
+    if not s or not s.strip():
+        return None
+    try:
+        return date.fromisoformat(s.strip())
+    except ValueError:
+        return None
+
+
+def _filtros_reportes(
+    user: User,
+    facultad_id: Optional[int],
+    desde: Optional[str],
+    hasta: Optional[str],
+) -> dict:
+    return {
+        "coord_owner_id": (
+            user.id if user.role == UserRole.COORDINADOR else None
+        ),
+        "facultad_id": facultad_id,
+        "desde": _parse_date_opt(desde),
+        "hasta": _parse_date_opt(hasta),
+    }
+
+
+def _querystring_reportes(
+    facultad_id: Optional[int],
+    desde: Optional[str],
+    hasta: Optional[str],
+) -> str:
+    parts = []
+    if facultad_id is not None:
+        parts.append(f"facultad_id={facultad_id}")
+    if desde:
+        parts.append(f"desde={desde}")
+    if hasta:
+        parts.append(f"hasta={hasta}")
+    return ("?" + "&".join(parts)) if parts else ""
+
+
 @app.get("/reportes")
 def reportes(
     request: Request,
+    facultad_id: Optional[int] = Query(default=None),
+    desde: Optional[str] = Query(default=None),
+    hasta: Optional[str] = Query(default=None),
     user: User = Depends(
         require_role(UserRole.COORDINADOR, UserRole.ADMINISTRADOR)
     ),
+    session: Session = Depends(get_session),
 ):
-    """Stub honesto: el módulo de reportes está planeado para R2 (P08)."""
-    return templates.TemplateResponse(
-        request,
-        "reportes.html",
-        {"user": user},
+    filtros = _filtros_reportes(user, facultad_id, desde, hasta)
+    kpis = kpis_globales(session, filtros)
+    por_facultad = metricas_por_facultad(session, filtros)
+    por_convocatoria = metricas_por_convocatoria(session, filtros)
+    facultades = session.exec(select(Facultad).order_by(Facultad.nombre)).all()
+    qs = _querystring_reportes(facultad_id, desde, hasta)
+    ctx = {
+        "user": user,
+        "kpis": kpis,
+        "por_facultad": por_facultad,
+        "por_convocatoria": por_convocatoria,
+        "facultades": facultades,
+        "filtros_form": {
+            "facultad_id": facultad_id,
+            "desde": desde or "",
+            "hasta": hasta or "",
+        },
+        "querystring": qs,
+    }
+    ctx.update(_notif_ctx_user(session, user))
+    return templates.TemplateResponse(request, "reportes.html", ctx)
+
+
+def _csv_response(contenido: str, nombre_base: str) -> Response:
+    """Envuelve el CSV con BOM UTF-8 + Content-Disposition con fecha."""
+    fecha = date.today().isoformat()
+    filename = f"{nombre_base}_{fecha}.csv"
+    return Response(
+        content="﻿" + contenido,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@app.get("/reportes/csv/postulaciones")
+def reportes_csv_postulaciones(
+    facultad_id: Optional[int] = Query(default=None),
+    desde: Optional[str] = Query(default=None),
+    hasta: Optional[str] = Query(default=None),
+    user: User = Depends(
+        require_role(UserRole.COORDINADOR, UserRole.ADMINISTRADOR)
+    ),
+    session: Session = Depends(get_session),
+):
+    filtros = _filtros_reportes(user, facultad_id, desde, hasta)
+    contenido = exportar_postulaciones_csv(session, filtros)
+    return _csv_response(contenido, "postulaciones")
+
+
+@app.get("/reportes/csv/convocatorias")
+def reportes_csv_convocatorias(
+    facultad_id: Optional[int] = Query(default=None),
+    desde: Optional[str] = Query(default=None),
+    hasta: Optional[str] = Query(default=None),
+    user: User = Depends(
+        require_role(UserRole.COORDINADOR, UserRole.ADMINISTRADOR)
+    ),
+    session: Session = Depends(get_session),
+):
+    filtros = _filtros_reportes(user, facultad_id, desde, hasta)
+    contenido = exportar_convocatorias_csv(session, filtros)
+    return _csv_response(contenido, "convocatorias")
+
+
+@app.get("/reportes/csv/monitores")
+def reportes_csv_monitores(
+    facultad_id: Optional[int] = Query(default=None),
+    desde: Optional[str] = Query(default=None),
+    hasta: Optional[str] = Query(default=None),
+    user: User = Depends(
+        require_role(UserRole.COORDINADOR, UserRole.ADMINISTRADOR)
+    ),
+    session: Session = Depends(get_session),
+):
+    filtros = _filtros_reportes(user, facultad_id, desde, hasta)
+    contenido = exportar_monitores_csv(session, filtros)
+    return _csv_response(contenido, "monitores")
 
 
 @app.post("/login")

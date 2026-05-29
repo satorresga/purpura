@@ -1,32 +1,178 @@
 {% extends "base.html" %}
+{% from '_macros.html' import chip_facultad, badge_estado %}
 {% block title %}Reportes · PÚRPURA{% endblock %}
 {% block main_class %}{% endblock %}
 
 {% block content %}
-<section class="hero-rojo">
+<section class="hero-rojo" style="padding:48px 0;">
   <div class="contenedor">
     <div class="breadcrumb">PANEL DE COORDINACIÓN</div>
-    <h1>Reportes</h1>
+    <h1>Reportes e indicadores</h1>
     <p class="descripcion">
-      Indicadores y exportaciones del sistema de monitorías.
+      Métricas agregadas del programa de monitorías y exportación de datos para análisis.
     </p>
   </div>
 </section>
 
-<section class="contenedor" style="padding: 80px 24px; text-align: center;">
-  <div style="max-width: 520px; margin: 0 auto;">
-    <div style="font-size: 3rem; margin-bottom: 16px;">📊</div>
-    <h2 style="color: var(--udem-rojo); font-family: var(--font-display); font-weight: 700; margin-bottom: 12px;">
-      Módulo en construcción
-    </h2>
-    <p style="color: var(--udem-gris-texto); line-height: 1.6; margin-bottom: 32px;">
-      El módulo de reportes está planeado para la siguiente iteración del sistema
-      (Release 2). Incluirá exportación a CSV de postulaciones, indicadores de
-      adjudicación por convocatoria y trazabilidad por facultad.
+<main class="udem-container">
+  {% with messages = request.session.pop('flash', None) %}
+    {% if messages %}
+      {% for level, msg in messages %}
+        <div class="alert alert-{{ level }}">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="get" action="/reportes" class="udem-card" style="margin-bottom:18px;">
+    <div class="row g-3" style="align-items:end;">
+      <div class="col-md-4">
+        <label for="filtro-facultad">Facultad</label>
+        <select id="filtro-facultad" name="facultad_id" class="form-select">
+          <option value="">— Todas —</option>
+          {% for f in facultades %}
+            <option value="{{ f.id }}" {% if filtros_form.facultad_id == f.id %}selected{% endif %}>
+              {{ f.nombre }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label for="filtro-desde">Desde</label>
+        <input type="date" id="filtro-desde" name="desde" class="form-control" value="{{ filtros_form.desde }}">
+      </div>
+      <div class="col-md-3">
+        <label for="filtro-hasta">Hasta</label>
+        <input type="date" id="filtro-hasta" name="hasta" class="form-control" value="{{ filtros_form.hasta }}">
+      </div>
+      <div class="col-md-2" style="display:flex; gap:8px;">
+        <button type="submit" class="btn-udem" style="flex:1;">Aplicar</button>
+        <a href="/reportes" class="btn-udem-outline" style="flex:1; text-align:center;">Limpiar</a>
+      </div>
+    </div>
+    {% if user.role.value == 'coordinador' %}
+    <p style="font-size:12px; color:var(--udem-gris-texto); margin:10px 0 0;">
+      Solo se muestran datos de tus convocatorias (created_by = tu usuario).
     </p>
-    <a href="/dashboard" class="btn-iniciar-sesion" style="text-decoration: none;">
-      Volver al dashboard
-    </a>
+    {% endif %}
+  </form>
+
+  <div class="kpis-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:24px;">
+    <div class="kpi-card udem-card" data-kpi="convocatorias_activas">
+      <div class="kpi-numero" style="font-family:var(--font-display); font-size:36px; font-weight:800; color:var(--udem-azul);">
+        {{ kpis.convocatorias_activas }}
+      </div>
+      <div class="kpi-etiqueta" style="font-size:11px; color:var(--udem-gris-texto); text-transform:uppercase; letter-spacing:0.05em; margin-top:4px;">
+        Convocatorias activas
+      </div>
+    </div>
+    <div class="kpi-card udem-card" data-kpi="postulaciones_total">
+      <div class="kpi-numero" style="font-family:var(--font-display); font-size:36px; font-weight:800; color:var(--udem-rojo);">
+        {{ kpis.postulaciones_total }}
+      </div>
+      <div class="kpi-etiqueta" style="font-size:11px; color:var(--udem-gris-texto); text-transform:uppercase; letter-spacing:0.05em; margin-top:4px;">
+        Postulaciones recibidas
+      </div>
+    </div>
+    <div class="kpi-card udem-card" data-kpi="monitorias_adjudicadas">
+      <div class="kpi-numero" style="font-family:var(--font-display); font-size:36px; font-weight:800; color:var(--udem-teal);">
+        {{ kpis.monitorias_adjudicadas }}
+      </div>
+      <div class="kpi-etiqueta" style="font-size:11px; color:var(--udem-gris-texto); text-transform:uppercase; letter-spacing:0.05em; margin-top:4px;">
+        Monitorías adjudicadas
+      </div>
+    </div>
+    <div class="kpi-card kpi-destacado udem-card" data-kpi="tasa_adjudicacion" style="border-left:4px solid var(--udem-rojo);">
+      <div class="kpi-numero" style="font-family:var(--font-display); font-size:36px; font-weight:800; color:var(--udem-negro);">
+        {{ kpis.tasa_adjudicacion | round(1) }}%
+      </div>
+      <div class="kpi-etiqueta" style="font-size:11px; color:var(--udem-gris-texto); text-transform:uppercase; letter-spacing:0.05em; margin-top:4px;">
+        Tasa de adjudicación
+      </div>
+    </div>
   </div>
-</section>
+
+  <div class="udem-card" style="margin-bottom:24px; border-left:4px solid var(--udem-dorado);">
+    <h3 style="margin:0 0 6px 0; font-size:15px; color:var(--udem-negro); font-family:var(--font-display);">Exportar a CSV</h3>
+    <p style="font-size:12px; color:var(--udem-gris-texto); margin:0 0 12px;">
+      Los filtros aplicados arriba se propagan a la descarga. Codificación UTF-8 con BOM, separador <code>;</code> (compatible con Excel).
+    </p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <a href="/reportes/csv/postulaciones{{ querystring }}" class="btn-udem-outline" data-export="postulaciones">📋 Postulaciones</a>
+      <a href="/reportes/csv/convocatorias{{ querystring }}" class="btn-udem-outline" data-export="convocatorias">📑 Convocatorias</a>
+      <a href="/reportes/csv/monitores{{ querystring }}" class="btn-udem-outline" data-export="monitores">👥 Monitores</a>
+    </div>
+  </div>
+
+  <h2 class="udem-section-title" style="font-size:18px; margin-bottom:10px;">Métricas por facultad</h2>
+  {% if por_facultad %}
+  <table class="udem-table tabla-reportes" style="margin-bottom:32px;">
+    <thead>
+      <tr>
+        <th>Facultad</th>
+        <th>Convocatorias</th>
+        <th>Postulaciones</th>
+        <th>Adjudicadas</th>
+        <th>Tasa</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for fila in por_facultad %}
+      <tr data-facultad-id="{{ fila.facultad_id }}">
+        <td>
+          <span class="chip-facultad fac-{{ fila.codigo }}">{{ fila.nombre }}</span>
+        </td>
+        <td>{{ fila.convocatorias }}</td>
+        <td>{{ fila.postulaciones }}</td>
+        <td>{{ fila.adjudicadas }}</td>
+        <td><strong>{{ fila.tasa | round(1) }}%</strong></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="udem-card" style="margin-bottom:32px;">
+    <p style="margin:0; color:var(--udem-gris-texto);">No hay datos para los filtros aplicados.</p>
+  </div>
+  {% endif %}
+
+  <h2 class="udem-section-title" style="font-size:18px; margin-bottom:10px;">Detalle por convocatoria</h2>
+  {% if por_convocatoria %}
+  <table class="udem-table tabla-reportes">
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Título</th>
+        <th>Estado</th>
+        <th>Cupos</th>
+        <th>Postulaciones</th>
+        <th>Aprob.</th>
+        <th>Rech.</th>
+        <th>Adj.</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in por_convocatoria %}
+      <tr data-conv-id="{{ c.id }}">
+        <td><code>{{ c.codigo }}</code></td>
+        <td>
+          <a href="/convocatorias/{{ c.id }}" style="color:var(--udem-negro); text-decoration:none; font-weight:600;">
+            {{ c.titulo }}
+          </a>
+        </td>
+        <td>{{ badge_estado(c.estado) }}</td>
+        <td>{{ c.cupos }}</td>
+        <td>{{ c.postulaciones_total }}</td>
+        <td>{{ c.aprobadas }}</td>
+        <td>{{ c.rechazadas }}</td>
+        <td><strong>{{ c.adjudicadas }}</strong></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="udem-card">
+    <p style="margin:0; color:var(--udem-gris-texto);">No hay convocatorias para los filtros aplicados.</p>
+  </div>
+  {% endif %}
+</main>
 {% endblock %}
