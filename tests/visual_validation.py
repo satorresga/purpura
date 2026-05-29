@@ -28,6 +28,8 @@ SCREENSHOTS_DIR = Path("tests/screenshots/p01_validation")
 SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
 SCREENSHOTS_LOGO_DIR = Path("tests/screenshots/p01_logo_smoke")
 SCREENSHOTS_LOGO_DIR.mkdir(parents=True, exist_ok=True)
+SCREENSHOTS_LANDING_DIR = Path("tests/screenshots/p015b_smoke")
+SCREENSHOTS_LANDING_DIR.mkdir(parents=True, exist_ok=True)
 
 # El seed P00 conservó admin@purpura.local del Sprint 1 (no admin@udem.edu.co
 # que asumió el prompt). Las otras credenciales coinciden con el seed real.
@@ -111,12 +113,13 @@ async def main():
         await shot(page, "01_login")
 
         try:
-            alt = await page.locator(".marca-institucional img").first.get_attribute("alt")
+            alt = await page.locator("header .logosimbolo img").first.get_attribute("alt")
             ok = alt is not None and "Universidad de Medellín" in alt
-            record("V01", "Marca 'Universidad de Medellín' en alt del logo",
+            record("V01", "Marca 'Universidad de Medellín' en alt del logo navbar",
                    ok, f"alt: {alt}")
         except Exception as e:
-            record("V01", "Marca 'Universidad de Medellín' en alt del logo", False, str(e)[:80])
+            record("V01", "Marca 'Universidad de Medellín' en alt del logo navbar",
+                   False, str(e)[:80])
 
         try:
             count = await page.locator("img[src*='logosimbolo-udem']").count()
@@ -125,8 +128,8 @@ async def main():
         except Exception as e:
             record("V02", "Logosímbolo oficial UdeM presente", False, str(e)[:80])
 
-        bc = await computed_style(page, ".login-card", "border-top-color")
-        record("V03", "Borde superior rojo en login card",
+        bc = await computed_style(page, ".role-tabs-label", "background-color")
+        record("V03", "Card login con franja roja Figma (label tabs)",
                bc == UDEM_RED, f"actual: {bc}")
 
         ff = await computed_style(page, "body", "font-family")
@@ -140,10 +143,13 @@ async def main():
             record("V05", "Sello 'Vigilada MinEducación' en footer", False, str(e)[:80])
 
         try:
-            await expect(page.locator("text=Ciencia y Libertad").first).to_be_visible(timeout=3000)
-            record("V06", "Lema 'Ciencia y Libertad' presente", True)
+            alt = await page.locator("header .logosimbolo img").first.get_attribute("alt")
+            ok = alt is not None and "Ciencia y Libertad" in alt
+            record("V06", "Lema 'Ciencia y Libertad' en alt del logo navbar",
+                   ok, f"alt: {alt}")
         except Exception as e:
-            record("V06", "Lema 'Ciencia y Libertad' presente", False, str(e)[:80])
+            record("V06", "Lema 'Ciencia y Libertad' en alt del logo navbar",
+                   False, str(e)[:80])
 
         # ============================================
         # ESCENARIO 2 — Dashboard admin
@@ -271,17 +277,18 @@ async def main():
         await page.goto(f"{BASE_URL}/login")
         await page.wait_for_load_state("domcontentloaded")
         try:
-            logo = page.locator(".marca-institucional img").first
+            logo = page.locator("header .logosimbolo img").first
             await expect(logo).to_be_visible(timeout=5000)
             src = await logo.get_attribute("src") or ""
             box = await logo.bounding_box()
             h = box["height"] if box else 0
-            ok = "logosimbolo-udem-color.png" in src and h >= 60
-            record("V19", "Login: logo color, height >= 60",
+            ok = "logosimbolo-udem-color.png" in src and h >= 40
+            record("V19", "Pantalla login: logo color en navbar, height >= 40",
                    ok, f"src={src.rsplit('/', 1)[-1]} h={h:.0f}")
             await page.screenshot(path=str(SCREENSHOTS_LOGO_DIR / "19_login_logo.png"))
         except Exception as e:
-            record("V19", "Login: logo color, height >= 60", False, str(e)[:80])
+            record("V19", "Pantalla login: logo color en navbar, height >= 40",
+                   False, str(e)[:80])
 
         await login(page, *USERS["admin"])
         try:
@@ -311,6 +318,84 @@ async def main():
             await page.screenshot(path=str(SCREENSHOTS_LOGO_DIR / "21_footer_logo.png"))
         except Exception as e:
             record("V21", "Footer: logo blanco, height >= 40", False, str(e)[:80])
+
+        # ============================================
+        # ESCENARIO 7 — Landing pública + login con tabs (P01.5b)
+        # ============================================
+        print("\n  Escenario 7 — Landing pública + login con tabs")
+        await ctx.clear_cookies()
+        await page.goto(f"{BASE_URL}/")
+        await page.wait_for_load_state("domcontentloaded")
+        try:
+            await page.wait_for_selector(".landing-hero", timeout=10000)
+            h1_text = await page.locator(".landing-hero h1").first.text_content()
+            ok = h1_text and "Monitorías académicas" in h1_text
+            record("V22", "Landing: hero con título 'Monitorías académicas'",
+                   ok, f"h1: {h1_text.strip() if h1_text else None}")
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "22_landing_hero.png"),
+                full_page=True,
+            )
+        except Exception as e:
+            record("V22", "Landing: hero con título 'Monitorías académicas'",
+                   False, str(e)[:80])
+
+        try:
+            bg_image = await page.locator(".landing-hero").first.evaluate(
+                "el => getComputedStyle(el).backgroundImage"
+            )
+            ok = bg_image is not None and "200, 32, 45" in bg_image
+            record("V23", "Landing: hero con gradient rojo Figma",
+                   ok, f"bg: {(bg_image or '')[:70]}")
+        except Exception as e:
+            record("V23", "Landing: hero con gradient rojo Figma",
+                   False, str(e)[:80])
+
+        try:
+            stats = await page.locator(".stat").count()
+            record("V24", "Landing: 4 stats (72/60K+/7/ACREDITADA)",
+                   stats == 4, f"stats: {stats}")
+        except Exception as e:
+            record("V24", "Landing: 4 stats (72/60K+/7/ACREDITADA)",
+                   False, str(e)[:80])
+
+        try:
+            perfiles = await page.locator(".perfil").count()
+            record("V25", "Landing: 3 perfiles de comunidad",
+                   perfiles == 3, f"perfiles: {perfiles}")
+        except Exception as e:
+            record("V25", "Landing: 3 perfiles de comunidad",
+                   False, str(e)[:80])
+
+        try:
+            seccion = page.locator("#convocatorias").first
+            visible = await seccion.is_visible()
+            record("V26", "Landing: sección #convocatorias visible",
+                   visible, f"visible={visible}")
+        except Exception as e:
+            record("V26", "Landing: sección #convocatorias visible",
+                   False, str(e)[:80])
+
+        try:
+            await page.goto(f"{BASE_URL}/login")
+            await page.wait_for_load_state("domcontentloaded")
+            await page.wait_for_selector(".role-tab[data-rol='coordinador']", timeout=8000)
+            await page.click(".role-tab[data-rol='coordinador']")
+            await page.wait_for_timeout(400)
+            tab_coord = page.locator(".role-tab[data-rol='coordinador']").first
+            bg_coord = await tab_coord.evaluate(
+                "el => getComputedStyle(el).backgroundColor"
+            )
+            ok = bg_coord == "rgb(200, 32, 45)"
+            record("V27", "Login: tab coordinador activo rojo Figma",
+                   ok, f"bg: {bg_coord}")
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "27_login_tabs.png"),
+                full_page=False,
+            )
+        except Exception as e:
+            record("V27", "Login: tab coordinador activo rojo Figma",
+                   False, str(e)[:80])
 
         await browser.close()
 

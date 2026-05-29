@@ -1,0 +1,640 @@
+/* ============================================
+   LANDING PÚBLICA + LOGIN CON TABS (P01.5b)
+   ============================================ */
+
+.contenedor {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ============================================
+   Navbar — botón "Iniciar sesión" (estado pública)
+   ============================================ */
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-iniciar-sesion {
+  background: var(--udem-rojo);
+  color: var(--udem-blanco);
+  padding: 10px 20px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  transition: background 0.15s;
+}
+.btn-iniciar-sesion:hover {
+  background: var(--udem-rojo-oscuro);
+  color: var(--udem-blanco);
+}
+
+.btn-cerrar-sesion {
+  background: var(--udem-rojo);
+  color: var(--udem-blanco);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.usuario-nombre {
+  color: var(--udem-gris-texto);
+  margin-right: 12px;
+  font-size: 0.9375rem;
+}
+
+/* ============================================
+   HERO
+   ============================================ */
+.landing-hero {
+  padding: 80px 0;
+}
+
+.landing-hero h1 {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  margin-bottom: 16px;
+  font-weight: 800;
+}
+
+.landing-hero .breadcrumb {
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  margin-bottom: 16px;
+}
+
+.hero-ctas {
+  display: flex;
+  gap: 16px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+
+.btn-blanco {
+  background: var(--udem-blanco);
+  color: var(--udem-rojo);
+  padding: 14px 28px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: transform 0.15s;
+}
+.btn-blanco:hover {
+  transform: translateY(-1px);
+  color: var(--udem-rojo);
+}
+
+.btn-outline-blanco {
+  background: transparent;
+  color: var(--udem-blanco);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  padding: 12px 28px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: border-color 0.15s, background 0.15s;
+}
+.btn-outline-blanco:hover {
+  border-color: var(--udem-blanco);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--udem-blanco);
+}
+
+/* ============================================
+   STATS BAR
+   ============================================ */
+.stats-bar {
+  background: var(--udem-blanco);
+  border-bottom: 1px solid var(--udem-borde);
+  padding: 32px 0;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat .numero {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--udem-rojo);
+  line-height: 1.1;
+}
+
+.stat .etiqueta {
+  font-size: 0.8125rem;
+  color: var(--udem-gris-texto);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 6px;
+}
+
+/* ============================================
+   Cómo funciona (fondo negro)
+   ============================================ */
+.seccion-pasos {
+  background: var(--udem-negro);
+  color: var(--udem-blanco);
+  padding: 80px 0;
+}
+
+.seccion-pasos h2,
+.seccion-pasos h3 {
+  color: var(--udem-blanco);
+}
+
+.seccion-titulo {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.seccion-pasos .seccion-titulo p {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.kicker {
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  color: var(--udem-rojo);
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.kicker-blanco {
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  color: var(--udem-blanco);
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.seccion-titulo h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  margin: 0 0 12px;
+  font-weight: 800;
+}
+
+.pasos-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+}
+
+.paso .paso-num {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--udem-rojo);
+  margin-bottom: 8px;
+  line-height: 1;
+}
+
+.paso h3 {
+  font-size: 1.125rem;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.paso p {
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ============================================
+   Comunidad (fondo crema)
+   ============================================ */
+.seccion-comunidad {
+  background: var(--udem-crema);
+  padding: 80px 0;
+}
+
+.seccion-comunidad .seccion-titulo h2 {
+  color: var(--udem-negro);
+}
+
+.seccion-comunidad .seccion-titulo p {
+  color: var(--udem-gris-texto);
+}
+
+.perfiles-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.perfil {
+  background: var(--udem-blanco);
+  padding: 32px 24px;
+  border-radius: 8px;
+  border-top: 6px solid;
+  box-shadow: var(--shadow-md);
+}
+
+.perfil-estudiante { border-top-color: var(--udem-teal); }
+.perfil-admin      { border-top-color: var(--udem-dorado); }
+.perfil-coord      { border-top-color: var(--udem-azul); }
+
+.perfil-tag {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--udem-gris-claro);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.perfil h3 {
+  color: var(--udem-negro);
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
+.perfil p {
+  color: var(--udem-gris-texto);
+  margin: 0 0 16px;
+}
+
+.perfil ul {
+  margin: 16px 0 0;
+  padding-left: 20px;
+  color: var(--udem-gris-texto);
+  font-size: 0.9375rem;
+}
+
+.perfil ul li {
+  margin-bottom: 6px;
+}
+
+/* ============================================
+   Convocatorias preview
+   ============================================ */
+.seccion-convocatorias {
+  padding: 80px 0;
+  background: var(--udem-blanco);
+}
+
+.titulo-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  text-align: left;
+}
+
+.link-ver-todas {
+  color: var(--udem-rojo);
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-decoration: none;
+  letter-spacing: 0.04em;
+}
+
+.convocatorias-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.seccion-convocatorias .conv-card {
+  background: var(--udem-blanco);
+  border: 1px solid var(--udem-borde);
+  padding: 24px;
+  border-radius: 8px;
+  border-top: 1px solid var(--udem-borde);
+}
+
+.conv-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.badge-abierta {
+  background: rgba(91, 176, 168, 0.18);
+  color: #1F5D5B;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.badge-proxima {
+  background: rgba(255, 217, 102, 0.30);
+  color: #6B5A1F;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.conv-fecha {
+  font-size: 0.75rem;
+  color: var(--udem-gris-claro);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.conv-facultad {
+  font-size: 0.75rem;
+  color: var(--udem-rojo);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.conv-titulo {
+  font-size: 1.125rem;
+  margin-bottom: 8px;
+  color: var(--udem-negro);
+  font-weight: 700;
+}
+
+.conv-desc {
+  font-size: 0.9375rem;
+  color: var(--udem-gris-texto);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.conv-bottom {
+  padding-top: 12px;
+  border-top: 1px solid var(--udem-borde);
+  font-size: 0.8125rem;
+  color: var(--udem-gris-texto);
+}
+
+.sin-convocatorias {
+  text-align: center;
+  padding: 48px;
+  color: var(--udem-gris-claro);
+}
+
+/* ============================================
+   FAQ (fondo crema)
+   ============================================ */
+.seccion-faq {
+  background: var(--udem-crema);
+  padding: 80px 0;
+}
+
+.seccion-faq .seccion-titulo h2 {
+  color: var(--udem-negro);
+}
+
+.faq-lista {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.faq-item {
+  background: var(--udem-blanco);
+  border: 1px solid var(--udem-borde);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.faq-item summary {
+  padding: 20px 24px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--udem-negro);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after {
+  content: "+";
+  margin-left: auto;
+  font-size: 1.5rem;
+  color: var(--udem-rojo);
+  line-height: 1;
+}
+.faq-item[open] summary::after { content: "−"; }
+
+.faq-tag {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--udem-rojo);
+  letter-spacing: 0.1em;
+}
+
+.faq-item p {
+  padding: 0 24px 20px;
+  color: var(--udem-gris-texto);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ============================================
+   CTA final (gradient rojo)
+   ============================================ */
+.cta-final {
+  background: linear-gradient(180deg, var(--udem-rojo) 0%, var(--udem-rojo-oscuro) 100%);
+  padding: 80px 0;
+  text-align: center;
+}
+
+.cta-bloque h2 {
+  color: var(--udem-blanco);
+  font-size: clamp(2rem, 4vw, 3rem);
+  margin: 8px 0 16px;
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+
+.cta-bloque p {
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 540px;
+  margin: 0 auto 32px;
+}
+
+.btn-cta-grande {
+  display: inline-block;
+  background: var(--udem-blanco);
+  color: var(--udem-rojo);
+  padding: 18px 40px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  font-size: 0.9375rem;
+  transition: transform 0.15s;
+}
+.btn-cta-grande:hover {
+  transform: translateY(-1px);
+  color: var(--udem-rojo);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 900px) {
+  .stats-grid,
+  .pasos-grid,
+  .perfiles-grid,
+  .convocatorias-grid { grid-template-columns: 1fr; }
+  .titulo-flex { flex-direction: column; gap: 16px; align-items: flex-start; }
+}
+
+/* ============================================
+   LOGIN CON TABS DE ROL
+   ============================================ */
+.login-wrap {
+  padding: 64px 0;
+  max-width: 540px;
+}
+
+.login-titulo {
+  text-align: center;
+  color: var(--udem-rojo);
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.login-subtitulo {
+  text-align: center;
+  color: var(--udem-gris-texto);
+  margin-bottom: 32px;
+}
+
+.login-card-con-tabs {
+  background: #DCDCDC;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.role-tabs {
+  display: flex;
+  align-items: stretch;
+  background: var(--udem-blanco);
+}
+
+.role-tabs-label {
+  background: var(--udem-rojo);
+  color: var(--udem-blanco);
+  padding: 18px 16px;
+  font-weight: 800;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+}
+
+.role-tab {
+  flex: 1;
+  background: var(--udem-blanco);
+  color: var(--udem-gris-texto);
+  border: 1px solid var(--udem-borde);
+  padding: 18px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  transition: background 0.15s, color 0.15s;
+}
+
+.role-tab[data-active="true"] { color: var(--udem-blanco); }
+.role-tab[data-rol="estudiante"][data-active="true"]    { background: var(--udem-teal);  border-color: var(--udem-teal); }
+.role-tab[data-rol="coordinador"][data-active="true"]   { background: var(--udem-rojo);  border-color: var(--udem-rojo); }
+.role-tab[data-rol="administrador"][data-active="true"] { background: var(--udem-azul);  border-color: var(--udem-azul); }
+
+.login-form {
+  padding: 32px;
+  background: var(--udem-blanco);
+}
+
+.login-form .form-group { margin-bottom: 20px; }
+
+.login-form label {
+  display: block;
+  font-weight: 500;
+  color: var(--udem-negro);
+  margin-bottom: 6px;
+  font-size: 0.9375rem;
+}
+
+.login-form input[type="email"],
+.login-form input[type="password"] {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid var(--udem-rojo);
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: var(--font-body);
+  background: var(--udem-blanco);
+  box-sizing: border-box;
+}
+
+.form-extras {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 16px 0 24px;
+  font-size: 0.875rem;
+}
+
+.checkbox-inline {
+  color: var(--udem-gris-texto);
+}
+
+.link-suave {
+  color: var(--udem-teal);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.btn-login {
+  width: 100%;
+  background: var(--udem-rojo);
+  color: var(--udem-blanco);
+  border: none;
+  padding: 16px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  font-family: var(--font-display);
+  transition: background 0.15s;
+}
+.btn-login:hover { background: var(--udem-rojo-oscuro); }
+
+.login-pie {
+  text-align: center;
+  color: var(--udem-gris-texto);
+  padding: 16px 32px 32px;
+  font-size: 0.875rem;
+  background: #DCDCDC;
+  margin: 0;
+}

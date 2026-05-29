@@ -67,23 +67,55 @@ async def http_exc_handler(request: Request, exc: HTTPException):
 
 
 @app.get("/")
-def root(user: Optional[User] = Depends(get_current_user)):
+def root(
+    request: Request,
+    user: Optional[User] = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
     if user is not None:
         return RedirectResponse("/dashboard", status_code=303)
-    return RedirectResponse("/login", status_code=303)
+
+    rows = session.exec(
+        select(Convocatoria, Facultad, Materia)
+        .outerjoin(Facultad, Convocatoria.facultad_id == Facultad.id)
+        .outerjoin(Materia, Convocatoria.materia_id == Materia.id)
+        .where(Convocatoria.status == ConvocatoriaStatus.PUBLICADA)
+        .order_by(Convocatoria.fecha_apertura.desc())
+        .limit(3)
+    ).all()
+    convocatorias = [
+        {
+            "id": c.id,
+            "titulo": c.titulo,
+            "descripcion": c.descripcion,
+            "cupos": c.cupos,
+            "facultad": f,
+            "materia": m,
+            "estado_publico": "ABIERTA",
+        }
+        for c, f, m in rows
+    ]
+    return templates.TemplateResponse(
+        request,
+        "landing.html",
+        {"user": None, "convocatorias": convocatorias},
+    )
 
 
 @app.get("/login")
 def login_get(
     request: Request,
+    rol: str = "estudiante",
     user: Optional[User] = Depends(get_current_user),
 ):
     if user is not None:
         return RedirectResponse("/dashboard", status_code=303)
+    if rol not in ("estudiante", "coordinador", "administrador"):
+        rol = "estudiante"
     return templates.TemplateResponse(
         request,
         "login.html",
-        {"user": None, "error": None},
+        {"user": None, "error": None, "rol_preferido": rol},
     )
 
 

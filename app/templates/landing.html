@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Monitorías Académicas · Universidad de Medellín{% endblock %}
+{% block main_class %}{% endblock %}
+
+{% block content %}
+<section class="hero-rojo landing-hero">
+  <div class="contenedor">
+    <div class="hero-texto">
+      <div class="breadcrumb">#CampusVivo · #SomosUdeM</div>
+      <h1>Monitorías académicas</h1>
+      <p class="descripcion">
+        Forma parte de los monitores de la Universidad de Medellín. Un proceso transparente,
+        trazable y centralizado para acompañar a tus compañeros desde la
+        excelencia académica.
+      </p>
+      <div class="hero-ctas">
+        <a href="#convocatorias" class="btn-blanco">Ver convocatorias</a>
+        <a href="https://udem.edu.co" target="_blank" rel="noopener" class="btn-outline-blanco">Conoce la universidad</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stats-bar">
+  <div class="contenedor stats-grid">
+    <div class="stat"><div class="numero">72</div><div class="etiqueta">Años de trayectoria</div></div>
+    <div class="stat"><div class="numero">60K+</div><div class="etiqueta">Egresados</div></div>
+    <div class="stat"><div class="numero">7</div><div class="etiqueta">Facultades</div></div>
+    <div class="stat"><div class="numero">ACREDITADA</div><div class="etiqueta">MEN · CNA · 2027</div></div>
+  </div>
+</section>
+
+<section class="seccion-pasos">
+  <div class="contenedor">
+    <div class="seccion-titulo">
+      <div class="kicker">CÓMO FUNCIONA</div>
+      <h2>Tu camino hacia la monitoría</h2>
+      <p>Un proceso claro, acompañado y con respaldo institucional.</p>
+    </div>
+    <div class="pasos-grid">
+      <div class="paso">
+        <div class="paso-num">01</div>
+        <h3>Postúlate</h3>
+        <p>Consulta convocatorias activas, ingresa con tu correo institucional y carga los documentos requeridos.</p>
+      </div>
+      <div class="paso">
+        <div class="paso-num">02</div>
+        <h3>Validación</h3>
+        <p>El sistema verifica automáticamente promedio, créditos y requisitos mínimos.</p>
+      </div>
+      <div class="paso">
+        <div class="paso-num">03</div>
+        <h3>Evaluación</h3>
+        <p>Docentes y coordinadores revisan tu postulación y seleccionan a los mejores candidatos.</p>
+      </div>
+      <div class="paso">
+        <div class="paso-num">04</div>
+        <h3>Asignación</h3>
+        <p>Monitor asignado a docente o curso específico, listo para comenzar a acompañar.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="seccion-comunidad">
+  <div class="contenedor">
+    <div class="seccion-titulo">
+      <div class="kicker">NUESTRA COMUNIDAD</div>
+      <h2>Un espacio para cada actor del proceso</h2>
+    </div>
+    <div class="perfiles-grid">
+      <div class="perfil perfil-estudiante">
+        <div class="perfil-tag">PERFIL 01</div>
+        <h3>Estudiante</h3>
+        <p>Consulta convocatorias activas, postúlate y haz seguimiento del estado de tu proceso en tiempo real.</p>
+        <ul>
+          <li>Ver convocatorias activas</li>
+          <li>Registrar postulación</li>
+          <li>Cargar documentos</li>
+          <li>Consultar estado</li>
+        </ul>
+      </div>
+      <div class="perfil perfil-admin">
+        <div class="perfil-tag">PERFIL 02</div>
+        <h3>Administrador</h3>
+        <p>Gestiona el ciclo completo del programa: convocatorias, filtros, decisiones y asignación de monitores.</p>
+        <ul>
+          <li>Crear convocatorias</li>
+          <li>Configurar reglas</li>
+          <li>Decisión final</li>
+          <li>Ver indicadores</li>
+        </ul>
+      </div>
+      <div class="perfil perfil-coord">
+        <div class="perfil-tag">PERFIL 03</div>
+        <h3>Coordinador</h3>
+        <p>Evalúa candidatos, registra comentarios y haz seguimiento a los monitores asignados a tu cátedra.</p>
+        <ul>
+          <li>Revisar postulaciones</li>
+          <li>Registrar comentarios</li>
+          <li>Consultar asignaciones</li>
+          <li>Apoyar evaluación</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="convocatorias" class="seccion-convocatorias">
+  <div class="contenedor">
+    <div class="seccion-titulo titulo-flex">
+      <div>
+        <div class="kicker">CONVOCATORIAS ACTIVAS</div>
+        <h2>Oportunidades del semestre</h2>
+      </div>
+      <a href="/login" class="link-ver-todas">VER TODAS →</a>
+    </div>
+    {% if convocatorias %}
+    <div class="convocatorias-grid">
+      {% for c in convocatorias %}
+      <article class="conv-card">
+        <div class="conv-meta">
+          <span class="badge-estado badge-abierta">{{ c.estado_publico }}</span>
+          <span class="conv-fecha">Activa</span>
+        </div>
+        <div class="conv-facultad">{{ c.facultad.nombre if c.facultad else "Facultad UdeM" }}</div>
+        <h3 class="conv-titulo">{{ c.titulo }}</h3>
+        <p class="conv-desc">{{ c.descripcion or "Convocatoria de monitoría académica." }}</p>
+        <div class="conv-bottom">
+          <span>{{ c.cupos }} cupos</span>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="sin-convocatorias">No hay convocatorias abiertas en este momento. Vuelve pronto.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="seccion-faq">
+  <div class="contenedor">
+    <div class="seccion-titulo">
+      <div class="kicker">RESOLVEMOS TUS DUDAS</div>
+      <h2>Preguntas frecuentes</h2>
+    </div>
+    <div class="faq-lista">
+      <details class="faq-item">
+        <summary><span class="faq-tag">POSTULACIÓN</span> ¿Cómo me postulo a una monitoría?</summary>
+        <p>Crea tu cuenta con correo institucional, revisa convocatorias activas, carga los documentos requeridos y registra tu candidatura.</p>
+      </details>
+      <details class="faq-item">
+        <summary><span class="faq-tag">REQUISITOS</span> ¿Cuáles son los requisitos para ser monitor?</summary>
+        <p>Promedio mínimo definido por convocatoria, créditos aprobados suficientes, documentos de soporte y sin sanciones disciplinarias vigentes.</p>
+      </details>
+      <details class="faq-item">
+        <summary><span class="faq-tag">SEGUIMIENTO</span> ¿Cómo consulto el estado de mi postulación?</summary>
+        <p>Desde tu perfil de estudiante puedes ver en qué fase está tu proceso en tiempo real.</p>
+      </details>
+      <details class="faq-item">
+        <summary><span class="faq-tag">PROGRAMA</span> ¿Qué es ser monitor en la UdeMedellín?</summary>
+        <p>Programa donde estudiantes destacados apoyan a sus compañeros bajo la supervisión de un docente tutor y coordinación académica.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="cta-final">
+  <div class="contenedor cta-bloque">
+    <div class="kicker-blanco">ÚNETE AL PROGRAMA</div>
+    <h2>Tu futuro como monitor empieza hoy</h2>
+    <p>Regístrate con tu correo institucional y accede a todas las convocatorias activas en un solo lugar.</p>
+    <a href="/login?rol=estudiante" class="btn-cta-grande">POSTULARME AHORA</a>
+  </div>
+</section>
+{% endblock %}
