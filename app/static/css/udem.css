@@ -83,40 +83,10 @@ a:hover { color: var(--udem-red-dark); }
   color: inherit;
 }
 
-.udem-navbar .logosimbolo .escudo {
-  width: 48px;
-  height: 48px;
-  background: var(--udem-red);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--udem-gold-light);
-  font-weight: 900;
-  font-family: var(--font-display);
-  font-size: 14px;
-  letter-spacing: 0.5px;
-  border-radius: var(--radius-sm);
-}
-
-.udem-navbar .marca {
-  line-height: 1.15;
-}
-
-.udem-navbar .marca .titulo {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--udem-red);
-  letter-spacing: 0.3px;
-}
-
-.udem-navbar .marca .lema {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 10px;
-  color: var(--udem-gray-dark);
-  letter-spacing: 0.5px;
-  margin-top: 2px;
+.udem-navbar .logosimbolo img {
+  height: 50px;
+  width: auto;
+  display: block;
 }
 
 .udem-navbar .modulo {
@@ -451,27 +421,6 @@ label {
 .login-card .marca-institucional {
   text-align: center;
   margin-bottom: 28px;
-}
-
-.login-card .marca-institucional .escudo-grande {
-  width: 64px;
-  height: 64px;
-  background: var(--udem-red);
-  color: var(--udem-gold-light);
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 18px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-sm);
-  margin-bottom: 14px;
-}
-
-.login-card h1 {
-  font-size: 20px;
-  margin: 0 0 4px 0;
-  color: var(--udem-blue-dark);
 }
 
 .login-card .subtitulo {

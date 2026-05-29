@@ -32,6 +32,8 @@ package = true
 
 [dependency-groups]
 dev = [
+    "numpy>=2.4.6",
+    "pillow>=12.2.0",
     "playwright>=1.59.0",
 ]
 

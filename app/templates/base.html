@@ -21,11 +21,10 @@
   <div class="container-fluid">
     <div style="display:flex; align-items:center; gap:14px;">
       <a href="/dashboard" class="logosimbolo">
-        <div class="escudo">UdeM</div>
-        <div class="marca">
-          <div class="titulo">Universidad de Medellín</div>
-          <div class="lema">Ciencia y Libertad</div>
-        </div>
+        <img src="{{ url_for('static', path='images/logosimbolo-udem-color.png') }}"
+             alt="Universidad de Medellín · Ciencia y Libertad"
+             height="50"
+             style="display:block;">
       </a>
       <div class="modulo">
         <div class="nombre">PÚRPURA</div>
@@ -84,8 +83,10 @@
 <footer class="udem-footer">
   <div class="container-fluid">
     <div class="col-info">
-      <div class="institucion">Universidad de Medellín</div>
-      <div class="lema">Ciencia y Libertad · Desde 1950</div>
+      <img src="{{ url_for('static', path='images/logosimbolo-udem-blanco.png') }}"
+           alt="Universidad de Medellín"
+           height="60"
+           style="display:block; margin-bottom: 12px;">
       <div class="vigilada">Vigilada MinEducación</div>
       <div class="creditos">
         Proyecto PÚRPURA · Diseño de Software 2026 ·
