@@ -37,10 +37,11 @@ USERS = {
     "estudiante": ("estudiante1@udem.edu.co", "Estudiante2026!"),
 }
 
-# Paleta UdeM oficial (CSS computado devuelve rgb())
-UDEM_RED        = "rgb(194, 38, 43)"    # #C2262B
-UDEM_BLUE_DARK  = "rgb(43, 68, 95)"     # #2B445F
-UDEM_GOLD_LIGHT = "rgb(234, 186, 61)"   # #EABA3D
+# Paleta Figma del equipo PÚRPURA (CSS computado devuelve rgb())
+UDEM_RED    = "rgb(200, 32, 45)"   # #C8202D
+UDEM_BLACK  = "rgb(26, 26, 26)"    # #1A1A1A (footer)
+UDEM_BLUE   = "rgb(43, 82, 120)"   # #2B5278 (table thead)
+UDEM_BORDER = "rgb(229, 227, 221)" # #E5E3DD (navbar bottom)
 
 results = []
 
@@ -129,8 +130,8 @@ async def main():
                bc == UDEM_RED, f"actual: {bc}")
 
         ff = await computed_style(page, "body", "font-family")
-        record("V04", "Tipografía Open Sans en body",
-               ff is not None and "Open Sans" in ff, f"actual: {ff}")
+        record("V04", "Tipografía Roboto en body (Figma)",
+               ff is not None and "Roboto" in ff, f"actual: {ff}")
 
         try:
             await expect(page.locator("text=Vigilada MinEducación").first).to_be_visible(timeout=3000)
@@ -152,8 +153,8 @@ async def main():
         await shot(page, "02_dashboard_admin")
 
         bb = await computed_style(page, ".udem-navbar", "border-bottom-color")
-        record("V07", "Navbar con borde inferior rojo institucional",
-               bb == UDEM_RED, f"actual: {bb}")
+        record("V07", "Navbar con borde inferior gris claro (Figma fino)",
+               bb == UDEM_BORDER, f"actual: {bb}")
 
         try:
             convs    = await page.locator('nav a:has-text("Convocatorias")').count()
@@ -174,8 +175,8 @@ async def main():
             record("V09", "Badge de rol 'administrador' en navbar", False, str(e)[:80])
 
         bg = await computed_style(page, ".udem-footer", "background-color")
-        record("V10", "Footer con fondo azul oscuro institucional",
-               bg == UDEM_BLUE_DARK, f"actual: {bg}")
+        record("V10", "Footer con fondo negro institucional (Figma)",
+               bg == UDEM_BLACK, f"actual: {bg}")
 
         # ============================================
         # ESCENARIO 3 — Listado de convocatorias (coord)
@@ -188,8 +189,8 @@ async def main():
         await shot(page, "03_convocatorias_coord")
 
         thead_bg = await computed_style(page, ".udem-table thead", "background-color")
-        record("V11", "Tabla con thead azul oscuro institucional",
-               thead_bg == UDEM_BLUE_DARK, f"actual: {thead_bg}")
+        record("V11", "Tabla con thead azul Figma",
+               thead_bg == UDEM_BLUE, f"actual: {thead_bg}")
 
         try:
             chips = await page.locator(".chip-facultad").count()

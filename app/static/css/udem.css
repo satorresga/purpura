@@ -1,21 +1,21 @@
 /* ============================================
    Universidad de Medellín — Identidad gráfica
-   Paleta oficial según manual público 2022
+   Paleta Figma del equipo PÚRPURA (Felipe Cano, PO/UX-UI)
    ============================================ */
 
 :root {
-  /* Paleta principal */
-  --udem-red: #C2262B;
-  --udem-red-dark: #932428;
-  --udem-gold: #B59D6C;
-  --udem-gold-light: #EABA3D;
-  --udem-blue-dark: #2B445F;
-  --udem-teal: #60A8A6;
-  --udem-teal-light: #8CC0B3;
-  --udem-gray-dark: #919698;
-  --udem-gray-light: #B9B9B8;
-  --udem-cream: #F5F1EC;
-  --udem-white: #FFFFFF;
+  /* Paleta principal Figma */
+  --udem-rojo:           #C8202D;
+  --udem-rojo-oscuro:    #8B141E;
+  --udem-teal:           #5BB0A8;
+  --udem-azul:           #2B5278;
+  --udem-dorado:         #FFD966;
+  --udem-negro:          #1A1A1A;
+  --udem-crema:          #F7F5F0;
+  --udem-blanco:         #FFFFFF;
+  --udem-gris-claro:     #B4B2A9;
+  --udem-gris-texto:     #5F5E5A;
+  --udem-borde:          #E5E3DD;
 
   /* Colores por facultad — el seed los persiste en facultades.color_hex */
   --fac-ingenierias: #708F51;
@@ -27,40 +27,43 @@
   --fac-diseno: #CF6528;
 
   /* Tipografía */
-  --font-display: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  --font-body: 'Open Sans', system-ui, -apple-system, Arial, sans-serif;
+  --font-display: 'Open Sans', system-ui, -apple-system, sans-serif;
+  --font-body:    'Roboto', system-ui, -apple-system, sans-serif;
 
   /* Tokens */
   --radius-sm: 3px;
   --radius-md: 4px;
-  --shadow-card: 0 1px 3px rgba(0,0,0,0.08);
-  --shadow-navbar: 0 2px 8px rgba(0,0,0,0.05);
+  --shadow-sm: 0 1px 2px rgba(26, 26, 26, 0.04);
+  --shadow-md: 0 2px 8px rgba(26, 26, 26, 0.06);
+  --shadow-lg: 0 4px 16px rgba(26, 26, 26, 0.08);
+  --shadow-card: var(--shadow-md);
+  --shadow-navbar: var(--shadow-sm);
 }
 
 /* Reset suave */
 body {
   font-family: var(--font-body);
-  background: var(--udem-cream);
-  color: #212529;
+  background: var(--udem-blanco);
+  color: var(--udem-gris-texto);
   margin: 0;
   line-height: 1.5;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1, h2, h3, h4, h5, h6, .display {
   font-family: var(--font-display);
   font-weight: 700;
-  color: #212529;
+  color: var(--udem-negro);
 }
 
-a { color: var(--udem-red); }
-a:hover { color: var(--udem-red-dark); }
+a { color: var(--udem-rojo); }
+a:hover { color: var(--udem-rojo-oscuro); }
 
 /* ============================================
    Navbar institucional
    ============================================ */
 .udem-navbar {
-  background: var(--udem-white);
-  border-bottom: 4px solid var(--udem-red);
+  background: var(--udem-blanco);
+  border-bottom: 1px solid var(--udem-borde);
   box-shadow: var(--shadow-navbar);
   padding: 12px 0;
 }
@@ -90,7 +93,7 @@ a:hover { color: var(--udem-red-dark); }
 }
 
 .udem-navbar .modulo {
-  border-left: 1px solid var(--udem-gray-light);
+  border-left: 1px solid var(--udem-borde);
   padding-left: 14px;
   margin-left: 4px;
   font-family: var(--font-display);
@@ -99,13 +102,13 @@ a:hover { color: var(--udem-red-dark); }
 .udem-navbar .modulo .nombre {
   font-size: 15px;
   font-weight: 700;
-  color: var(--udem-blue-dark);
+  color: var(--udem-negro);
   letter-spacing: 0.3px;
 }
 
 .udem-navbar .modulo .desc {
   font-size: 10px;
-  color: var(--udem-gray-dark);
+  color: var(--udem-gris-texto);
   letter-spacing: 0.3px;
 }
 
@@ -119,7 +122,7 @@ a:hover { color: var(--udem-red-dark); }
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: 600;
-  color: var(--udem-blue-dark);
+  color: var(--udem-gris-texto);
   text-decoration: none;
   padding: 6px 0;
   border-bottom: 2px solid transparent;
@@ -128,8 +131,8 @@ a:hover { color: var(--udem-red-dark); }
 
 .udem-navbar nav a:hover,
 .udem-navbar nav a.active {
-  color: var(--udem-red);
-  border-bottom-color: var(--udem-red);
+  color: var(--udem-rojo);
+  border-bottom-color: var(--udem-rojo);
 }
 
 .udem-navbar .user-menu {
@@ -140,8 +143,8 @@ a:hover { color: var(--udem-red-dark); }
 }
 
 .udem-navbar .user-menu .rol-badge {
-  background: var(--udem-cream);
-  color: var(--udem-blue-dark);
+  background: var(--udem-crema);
+  color: var(--udem-negro);
   padding: 3px 9px;
   border-radius: 12px;
   font-size: 10px;
@@ -151,10 +154,41 @@ a:hover { color: var(--udem-red-dark); }
 }
 
 /* ============================================
+   Hero pattern (reservado para páginas internas en P01.5b)
+   ============================================ */
+.hero-rojo {
+  background: linear-gradient(180deg, var(--udem-rojo) 0%, var(--udem-rojo-oscuro) 100%);
+  color: var(--udem-blanco);
+  padding: 48px 0;
+  width: 100%;
+}
+
+.hero-rojo h1 {
+  color: var(--udem-blanco);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  margin: 0;
+  font-weight: 800;
+}
+
+.hero-rojo .breadcrumb {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.875rem;
+  margin-bottom: 8px;
+}
+
+.hero-rojo .descripcion {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 1.0625rem;
+  margin-top: 12px;
+  max-width: 720px;
+}
+
+/* ============================================
    Botones
    ============================================ */
 .btn-udem {
-  background: var(--udem-red);
+  background: var(--udem-rojo);
   color: white;
   border: none;
   padding: 8px 20px;
@@ -167,12 +201,12 @@ a:hover { color: var(--udem-red-dark); }
   display: inline-block;
   transition: background 0.15s;
 }
-.btn-udem:hover { background: var(--udem-red-dark); color: white; }
+.btn-udem:hover { background: var(--udem-rojo-oscuro); color: white; }
 
 .btn-udem-outline {
   background: white;
-  color: var(--udem-blue-dark);
-  border: 1.5px solid var(--udem-blue-dark);
+  color: var(--udem-negro);
+  border: 1.5px solid var(--udem-negro);
   padding: 7px 19px;
   border-radius: var(--radius-sm);
   font-family: var(--font-body);
@@ -183,11 +217,11 @@ a:hover { color: var(--udem-red-dark); }
   display: inline-block;
   transition: all 0.15s;
 }
-.btn-udem-outline:hover { background: var(--udem-blue-dark); color: white; }
+.btn-udem-outline:hover { background: var(--udem-negro); color: white; }
 
 .btn-udem-ghost {
   background: transparent;
-  color: var(--udem-blue-dark);
+  color: var(--udem-negro);
   border: none;
   padding: 7px 14px;
   border-radius: var(--radius-sm);
@@ -197,7 +231,7 @@ a:hover { color: var(--udem-red-dark); }
   cursor: pointer;
   text-decoration: none;
 }
-.btn-udem-ghost:hover { background: var(--udem-cream); }
+.btn-udem-ghost:hover { background: var(--udem-crema); }
 
 /* ============================================
    Forms
@@ -212,7 +246,7 @@ input[type="date"],
 textarea,
 select {
   font-family: var(--font-body);
-  border: 1px solid var(--udem-gray-light);
+  border: 1px solid var(--udem-borde);
   border-radius: var(--radius-sm);
   padding: 8px 12px;
   font-size: 14px;
@@ -225,15 +259,15 @@ input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  border-color: var(--udem-red);
-  box-shadow: 0 0 0 3px rgba(194, 38, 43, 0.12);
+  border-color: var(--udem-rojo);
+  box-shadow: 0 0 0 3px rgba(200, 32, 45, 0.12);
 }
 
 label {
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 13px;
-  color: var(--udem-blue-dark);
+  color: var(--udem-negro);
   margin-bottom: 4px;
   display: block;
 }
@@ -245,14 +279,14 @@ label {
   background: white;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
-  border-top: 4px solid var(--udem-gray-light);
+  border-top: 4px solid var(--udem-borde);
   padding: 18px 20px;
   margin-bottom: 16px;
   transition: box-shadow 0.15s, transform 0.15s;
 }
 
 .conv-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+  box-shadow: var(--shadow-lg);
   transform: translateY(-1px);
 }
 
@@ -268,13 +302,13 @@ label {
   font-family: var(--font-display);
   font-size: 16px;
   font-weight: 700;
-  color: #212529;
+  color: var(--udem-negro);
   margin: 0 0 6px 0;
 }
 
 .conv-card .meta {
   font-size: 12px;
-  color: var(--udem-gray-dark);
+  color: var(--udem-gris-texto);
   margin-bottom: 10px;
 }
 
@@ -294,7 +328,7 @@ label {
   font-weight: 600;
   letter-spacing: 0.2px;
   color: white;
-  background: var(--udem-gray-dark);
+  background: var(--udem-gris-texto);
 }
 .chip-facultad.fac-ingenierias { background: var(--fac-ingenierias); }
 .chip-facultad.fac-economicas { background: var(--fac-economicas); }
@@ -318,18 +352,18 @@ label {
   font-family: var(--font-display);
 }
 .badge-borrador   { background: #EEEEEE; color: #555; }
-.badge-publicada  { background: rgba(96,168,166,0.18); color: #1F5D5B; }
-.badge-cerrada    { background: rgba(145,150,152,0.20); color: #555; }
-.badge-archivada  { background: rgba(145,150,152,0.20); color: #555; }
-.badge-adjudicada { background: rgba(181,157,108,0.25); color: #6B5A3F; }
-.badge-enviada    { background: rgba(58,102,170,0.15); color: #2E4F86; }
-.badge-aprobada   { background: rgba(96,168,166,0.20); color: #1F5D5B; }
-.badge-rechazada  { background: rgba(194,38,43,0.12); color: var(--udem-red-dark); }
-.badge-apta       { background: rgba(96,168,166,0.20); color: #1F5D5B; }
-.badge-no-apta    { background: rgba(194,38,43,0.12); color: var(--udem-red-dark); }
-.badge-revisar    { background: rgba(234,186,61,0.25); color: #7A5C12; }
-.badge-pendiente  { background: rgba(145,150,152,0.20); color: #555; }
-.badge-activo     { background: rgba(96,168,166,0.20); color: #1F5D5B; }
+.badge-publicada  { background: rgba(91, 176, 168, 0.18); color: #1F5D5B; }
+.badge-cerrada    { background: rgba(180, 178, 169, 0.20); color: #555; }
+.badge-archivada  { background: rgba(180, 178, 169, 0.20); color: #555; }
+.badge-adjudicada { background: rgba(255, 217, 102, 0.30); color: #6B5A1F; }
+.badge-enviada    { background: rgba(43, 82, 120, 0.15); color: #1F3A5A; }
+.badge-aprobada   { background: rgba(91, 176, 168, 0.20); color: #1F5D5B; }
+.badge-rechazada  { background: rgba(200, 32, 45, 0.12); color: var(--udem-rojo-oscuro); }
+.badge-apta       { background: rgba(91, 176, 168, 0.20); color: #1F5D5B; }
+.badge-no-apta    { background: rgba(200, 32, 45, 0.12); color: var(--udem-rojo-oscuro); }
+.badge-revisar    { background: rgba(255, 217, 102, 0.30); color: #6B5A1F; }
+.badge-pendiente  { background: rgba(180, 178, 169, 0.20); color: #555; }
+.badge-activo     { background: rgba(91, 176, 168, 0.20); color: #1F5D5B; }
 .badge-finalizado { background: #EEEEEE; color: #555; }
 
 /* ============================================
@@ -345,13 +379,13 @@ label {
   font-family: var(--font-display);
   font-size: 22px;
   font-weight: 700;
-  color: var(--udem-blue-dark);
+  color: var(--udem-negro);
   margin: 0 0 6px 0;
 }
 
 .udem-section-subtitle {
   font-size: 14px;
-  color: var(--udem-gray-dark);
+  color: var(--udem-gris-texto);
   margin-bottom: 24px;
 }
 
@@ -375,7 +409,7 @@ label {
 }
 
 .udem-table thead {
-  background: var(--udem-blue-dark);
+  background: var(--udem-azul);
   color: white;
 }
 
@@ -392,10 +426,10 @@ label {
 .udem-table td {
   padding: 12px 14px;
   font-size: 14px;
-  border-top: 1px solid #EAEAEA;
+  border-top: 1px solid var(--udem-borde);
 }
 
-.udem-table tbody tr:hover { background: var(--udem-cream); }
+.udem-table tbody tr:hover { background: var(--udem-crema); }
 
 /* ============================================
    Login screen específico
@@ -411,11 +445,11 @@ label {
 .login-card {
   background: white;
   border-radius: var(--radius-md);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-lg);
   width: 100%;
   max-width: 420px;
   padding: 36px 36px 30px;
-  border-top: 4px solid var(--udem-red);
+  border-top: 4px solid var(--udem-rojo);
 }
 
 .login-card .marca-institucional {
@@ -425,17 +459,17 @@ label {
 
 .login-card .subtitulo {
   font-size: 12px;
-  color: var(--udem-gray-dark);
+  color: var(--udem-gris-texto);
   letter-spacing: 0.5px;
 }
 
 /* ============================================
-   Footer institucional
+   Footer institucional (negro Figma)
    ============================================ */
 .udem-footer {
-  background: var(--udem-blue-dark);
-  color: rgba(255,255,255,0.85);
-  padding: 32px 0 22px;
+  background: var(--udem-negro);
+  color: var(--udem-blanco);
+  padding: 48px 0 24px;
   margin-top: 60px;
   font-family: var(--font-body);
   font-size: 13px;
@@ -454,37 +488,38 @@ label {
 
 .udem-footer .col-info { max-width: 520px; }
 
-.udem-footer .institucion {
-  font-family: var(--font-display);
+.udem-footer .titulo-columna {
+  color: var(--udem-blanco);
   font-weight: 700;
-  font-size: 14px;
-  color: white;
-  margin-bottom: 4px;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
 }
 
-.udem-footer .lema {
-  font-family: var(--font-display);
-  font-size: 11px;
-  color: var(--udem-gold-light);
-  letter-spacing: 0.5px;
-  margin-bottom: 12px;
+.udem-footer a {
+  color: var(--udem-gris-claro);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  line-height: 1.8;
 }
+.udem-footer a:hover { color: var(--udem-blanco); }
 
 .udem-footer .vigilada {
   font-family: var(--font-display);
   font-size: 11px;
   letter-spacing: 1.5px;
-  color: var(--udem-gold-light);
+  color: var(--udem-blanco);
   font-weight: 700;
   text-transform: uppercase;
-  border-top: 1px solid rgba(255,255,255,0.15);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding-top: 12px;
   margin-top: 12px;
 }
 
 .udem-footer .creditos {
   font-size: 11px;
-  color: rgba(255,255,255,0.6);
+  color: var(--udem-gris-claro);
   margin-top: 8px;
 }
 
@@ -495,7 +530,7 @@ label {
 .udem-footer .col-modulo .modulo-titulo {
   font-family: var(--font-display);
   font-weight: 700;
-  color: white;
+  color: var(--udem-blanco);
   font-size: 14px;
 }
 
@@ -509,7 +544,7 @@ label {
   margin-bottom: 16px;
   border-left: 4px solid;
 }
-.alert-success { background: rgba(96,168,166,0.10); border-color: var(--udem-teal); color: #1F5D5B; }
-.alert-danger  { background: rgba(194,38,43,0.08); border-color: var(--udem-red); color: var(--udem-red-dark); }
-.alert-warning { background: rgba(234,186,61,0.12); border-color: var(--udem-gold-light); color: #7A5C12; }
-.alert-info    { background: rgba(58,102,170,0.10); border-color: var(--udem-blue-dark); color: #2E4F86; }
+.alert-success { background: rgba(91, 176, 168, 0.10); border-color: var(--udem-teal); color: #1F5D5B; }
+.alert-danger  { background: rgba(200, 32, 45, 0.08); border-color: var(--udem-rojo); color: var(--udem-rojo-oscuro); }
+.alert-warning { background: rgba(255, 217, 102, 0.18); border-color: var(--udem-dorado); color: #6B5A1F; }
+.alert-info    { background: rgba(43, 82, 120, 0.10); border-color: var(--udem-azul); color: #1F3A5A; }

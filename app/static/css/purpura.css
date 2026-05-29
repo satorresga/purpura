@@ -3,13 +3,13 @@
 .dashboard-greeting {
   font-family: var(--font-display);
   font-size: 24px;
-  color: var(--udem-blue-dark);
+  color: var(--udem-negro);
   margin-bottom: 4px;
 }
 
 .dashboard-subgreeting {
   font-size: 14px;
-  color: var(--udem-gray-dark);
+  color: var(--udem-gris-texto);
   margin-bottom: 24px;
 }
 
@@ -27,24 +27,24 @@
   padding: 20px;
   text-decoration: none;
   color: inherit;
-  border-left: 4px solid var(--udem-red);
+  border-left: 4px solid var(--udem-rojo);
   transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .dashboard-quick-action:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+  box-shadow: var(--shadow-lg);
 }
 
 .dashboard-quick-action .label {
   font-family: var(--font-display);
   font-weight: 700;
-  color: var(--udem-blue-dark);
+  color: var(--udem-negro);
   font-size: 15px;
   margin-bottom: 4px;
 }
 
 .dashboard-quick-action .desc {
   font-size: 12px;
-  color: var(--udem-gray-dark);
+  color: var(--udem-gris-texto);
 }
