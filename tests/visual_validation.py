@@ -563,6 +563,151 @@ async def main():
                 str(e)[:80],
             )
 
+        # ============================================
+        # ESCENARIO 10 — Flujo estudiante: postular + cancelar (P03)
+        # ============================================
+        print("\n  Escenario 10 — Flujo estudiante (postular + cancelar)")
+        await logout(page)
+        await login(page, *USERS["estudiante"])
+
+        try:
+            await page.goto(f"{BASE_URL}/mis-postulaciones")
+            await page.wait_for_load_state("domcontentloaded")
+            await page.wait_for_selector("h1", timeout=8000)
+            ids_a_cancelar = []
+            filas = await page.locator(
+                "tr[data-postulacion-id][data-postulacion-estado='ENVIADA']"
+            ).all()
+            for fila in filas:
+                pid = await fila.get_attribute("data-postulacion-id")
+                if pid:
+                    ids_a_cancelar.append(pid)
+            for pid in ids_a_cancelar:
+                await page.request.post(
+                    f"{BASE_URL}/postulaciones/{pid}/cancelar"
+                )
+        except Exception as e:
+            print(f"    (cleanup falló sin bloquear) {str(e)[:80]}")
+
+        href_conv_v34 = None
+        try:
+            await page.goto(f"{BASE_URL}/convocatorias")
+            await page.wait_for_load_state("domcontentloaded")
+            primera = page.locator(
+                "tr[data-conv-id] a[href^='/convocatorias/']:not([href*='editar']):not([href*='archiv'])"
+            ).first
+            href_conv_v34 = await primera.get_attribute("href")
+            await primera.click()
+            await page.wait_for_load_state("domcontentloaded")
+            await page.wait_for_selector("h1", timeout=8000)
+            boton_postular = await page.locator(
+                "button[data-accion='postular']"
+            ).count()
+            record(
+                "V34",
+                "Estudiante: detalle convocatoria PUBLICADA con botón Postularme",
+                boton_postular >= 1,
+                f"href={href_conv_v34} botones_postular={boton_postular}",
+            )
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "34_estudiante_detalle.png"),
+                full_page=False,
+            )
+        except Exception as e:
+            record(
+                "V34",
+                "Estudiante: detalle convocatoria PUBLICADA con botón Postularme",
+                False,
+                str(e)[:80],
+            )
+
+        try:
+            boton = page.locator("button[data-accion='postular']").first
+            await boton.click()
+            await page.wait_for_load_state("domcontentloaded")
+            ok_url = "mis-postulaciones" in page.url
+            filas_envidas = await page.locator(
+                "tr[data-postulacion-estado='ENVIADA']"
+            ).count()
+            record(
+                "V35",
+                "Estudiante: tras postular aparece en mis-postulaciones",
+                ok_url and filas_envidas >= 1,
+                f"url={page.url} filas_enviadas={filas_envidas}",
+            )
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "35_mis_postulaciones.png"),
+                full_page=True,
+            )
+        except Exception as e:
+            record(
+                "V35",
+                "Estudiante: tras postular aparece en mis-postulaciones",
+                False,
+                str(e)[:80],
+            )
+
+        try:
+            if href_conv_v34:
+                await page.goto(f"{BASE_URL}{href_conv_v34}")
+                await page.wait_for_load_state("domcontentloaded")
+                boton_dup = await page.locator(
+                    "button[data-accion='postular']"
+                ).count()
+                indicador = await page.locator(
+                    ".mi-postulacion[data-postulacion-estado]"
+                ).count()
+                record(
+                    "V36",
+                    "Estudiante: misma convocatoria sin botón duplicado + indicador estado",
+                    boton_dup == 0 and indicador >= 1,
+                    f"botones={boton_dup} indicador={indicador}",
+                )
+            else:
+                record(
+                    "V36",
+                    "Estudiante: misma convocatoria sin botón duplicado + indicador estado",
+                    False,
+                    "V34 no obtuvo href_conv",
+                )
+        except Exception as e:
+            record(
+                "V36",
+                "Estudiante: misma convocatoria sin botón duplicado + indicador estado",
+                False,
+                str(e)[:80],
+            )
+
+        try:
+            await page.goto(f"{BASE_URL}/mis-postulaciones")
+            await page.wait_for_load_state("domcontentloaded")
+            btn_cancelar = page.locator(
+                "form[action$='/cancelar'] button[type='submit']"
+            ).first
+            await btn_cancelar.click()
+            await page.wait_for_load_state("domcontentloaded")
+            await page.wait_for_selector("h1", timeout=8000)
+            canceladas = await page.locator(
+                "tr[data-postulacion-estado='CANCELADA']"
+            ).count()
+            record(
+                "V37",
+                "Estudiante: cancelar postulación cambia el estado a CANCELADA",
+                canceladas >= 1,
+                f"filas_canceladas={canceladas}",
+            )
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "37_postulacion_cancelada.png"),
+                full_page=False,
+            )
+        except Exception as e:
+            record(
+                "V37",
+                "Estudiante: cancelar postulación cambia el estado a CANCELADA",
+                False,
+                str(e)[:80],
+            )
+
         await browser.close()
 
     # ============================================

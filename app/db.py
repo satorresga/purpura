@@ -25,6 +25,13 @@ def run_migrations() -> None:
         "ALTER TABLE convocatorias ADD COLUMN IF NOT EXISTS materia_id INTEGER REFERENCES materias(id)",
         "ALTER TABLE convocatorias ADD COLUMN IF NOT EXISTS semestre VARCHAR(20) NOT NULL DEFAULT '2026-1'",
         "ALTER TABLE convocatorias ADD COLUMN IF NOT EXISTS historial_estados JSONB NOT NULL DEFAULT '[]'::jsonb",
+        "ALTER TABLE postulaciones ADD COLUMN IF NOT EXISTS historial_estados JSONB NOT NULL DEFAULT '[]'::jsonb",
+        "ALTER TABLE postulaciones DROP CONSTRAINT IF EXISTS uq_postulacion_conv_est",
+        (
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_postulacion_activa "
+            "ON postulaciones (convocatoria_id, estudiante_id) "
+            "WHERE estado <> 'CANCELADA'"
+        ),
     ]
     with engine.begin() as conn:
         for stmt in column_statements:

@@ -11,9 +11,12 @@ from sqlmodel import Session, select
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.services.transiciones import (
+    POST_CANCELADA,
+    POST_ENVIADA,
     PermisoInsuficienteError,
     TransicionInvalidaError,
     transicionar_estado,
+    transicionar_postulacion,
     transiciones_disponibles,
 )
 
@@ -32,6 +35,8 @@ from app.models import (
     ConvocatoriaStatus,
     Facultad,
     Materia,
+    Notificacion,
+    Postulacion,
     User,
     UserRole,
 )
@@ -481,6 +486,31 @@ def convocatorias_detalle(
             )
         )
     )
+
+    postulacion_activa: Optional[Postulacion] = None
+    postulacion_historica: Optional[Postulacion] = None
+    puede_postular = False
+    puede_cancelar_postulacion = False
+    if user.role == UserRole.ESTUDIANTE:
+        postulacion_activa = session.exec(
+            select(Postulacion)
+            .where(Postulacion.convocatoria_id == conv.id)
+            .where(Postulacion.estudiante_id == user.id)
+            .where(Postulacion.estado != POST_CANCELADA)
+        ).first()
+        if postulacion_activa is None:
+            postulacion_historica = session.exec(
+                select(Postulacion)
+                .where(Postulacion.convocatoria_id == conv.id)
+                .where(Postulacion.estudiante_id == user.id)
+                .order_by(Postulacion.created_at.desc())
+            ).first()
+        if conv.status == ConvocatoriaStatus.PUBLICADA:
+            if postulacion_activa is None:
+                puede_postular = True
+            elif postulacion_activa.estado == POST_ENVIADA:
+                puede_cancelar_postulacion = True
+
     return templates.TemplateResponse(
         request,
         "convocatorias_detalle.html",
@@ -492,6 +522,10 @@ def convocatorias_detalle(
             "creator": creator,
             "transiciones": transiciones,
             "puede_editar": puede_editar,
+            "postulacion_activa": postulacion_activa,
+            "postulacion_historica": postulacion_historica,
+            "puede_postular": puede_postular,
+            "puede_cancelar_postulacion": puede_cancelar_postulacion,
         },
     )
 
@@ -711,3 +745,213 @@ def convocatorias_transicionar(
         f"Convocatoria {conv.codigo}: {estado_origen} → {nuevo.value}.",
     )
     return RedirectResponse(f"/convocatorias/{conv.id}", status_code=303)
+
+
+# ============================================================
+# Postulaciones (P03)
+# ============================================================
+
+_MOTIVACION_DEFAULT = (
+    "Postulación enviada desde el detalle de la convocatoria. "
+    "El estudiante aceptó los requisitos y solicita revisión."
+)
+
+
+@app.post("/convocatorias/{conv_id}/postular")
+def postular_post(
+    request: Request,
+    conv_id: uuid.UUID,
+    motivacion: str = Form(default=_MOTIVACION_DEFAULT),
+    user: User = Depends(require_role(UserRole.ESTUDIANTE)),
+    session: Session = Depends(get_session),
+):
+    conv = session.exec(
+        select(Convocatoria).where(Convocatoria.id == conv_id)
+    ).first()
+    if conv is None:
+        raise HTTPException(status_code=404, detail="Convocatoria no encontrada")
+    if conv.status != ConvocatoriaStatus.PUBLICADA:
+        _flash(
+            request,
+            "danger",
+            "Solo se puede postular a convocatorias PUBLICADAS.",
+        )
+        return RedirectResponse(f"/convocatorias/{conv.id}", status_code=303)
+
+    existing = session.exec(
+        select(Postulacion)
+        .where(Postulacion.convocatoria_id == conv.id)
+        .where(Postulacion.estudiante_id == user.id)
+        .where(Postulacion.estado != POST_CANCELADA)
+    ).first()
+    if existing is not None:
+        _flash(
+            request,
+            "warning",
+            f"Ya tienes una postulación activa para {conv.codigo} (estado: {existing.estado}).",
+        )
+        return RedirectResponse(f"/convocatorias/{conv.id}", status_code=303)
+
+    motivacion_final = (motivacion or "").strip() or _MOTIVACION_DEFAULT
+
+    historial_inicial = [
+        {
+            "from": "(creación)",
+            "to": POST_ENVIADA,
+            "by_user_id": str(user.id),
+            "by_email": user.email,
+            "motivo": "Postulación creada",
+            "at": datetime.utcnow().isoformat(),
+        },
+        {
+            "tipo": "validacion_inicial",
+            "promedio_validado": False,
+            "creditos_validados": False,
+            "razon": "datos_academicos_incompletos_en_modelo_user",
+            "manual_review": True,
+            "at": datetime.utcnow().isoformat(),
+        },
+    ]
+
+    postulacion = Postulacion(
+        convocatoria_id=conv.id,
+        estudiante_id=user.id,
+        promedio_acumulado=0.0,
+        motivacion=motivacion_final,
+        decision_automatica="REVISAR",
+        justificacion_automatica="Datos académicos del estudiante no disponibles en el modelo User; requiere revisión manual.",
+        estado=POST_ENVIADA,
+        historial_estados=historial_inicial,
+    )
+    session.add(postulacion)
+    session.flush()
+
+    notif = Notificacion(
+        usuario_id=conv.created_by,
+        titulo=f"Nueva postulación en {conv.codigo}",
+        cuerpo=(
+            f"{user.full_name} ({user.email}) postuló a tu convocatoria "
+            f"{conv.titulo}. Requiere revisión manual de requisitos."
+        ),
+        url_destino=f"/convocatorias/{conv.id}",
+        leida=False,
+    )
+    session.add(notif)
+    session.commit()
+    session.refresh(postulacion)
+
+    log_audit(
+        session,
+        user_id=user.id,
+        action="POSTULAR",
+        request=request,
+        entity_type="postulacion",
+        entity_id=None,
+        payload={"postulacion_id": postulacion.id, "convocatoria": conv.codigo},
+    )
+    _flash(
+        request,
+        "success",
+        f"Postulación enviada a {conv.codigo}. Te avisaremos cuando haya revisión.",
+    )
+    return RedirectResponse("/mis-postulaciones", status_code=303)
+
+
+@app.get("/mis-postulaciones")
+def mis_postulaciones(
+    request: Request,
+    user: User = Depends(require_role(UserRole.ESTUDIANTE)),
+    session: Session = Depends(get_session),
+):
+    rows = session.exec(
+        select(Postulacion, Convocatoria, Facultad)
+        .join(Convocatoria, Postulacion.convocatoria_id == Convocatoria.id)
+        .outerjoin(Facultad, Convocatoria.facultad_id == Facultad.id)
+        .where(Postulacion.estudiante_id == user.id)
+        .order_by(Postulacion.created_at.desc())
+    ).all()
+    postulaciones = [
+        {
+            "id": post.id,
+            "estado": post.estado,
+            "created_at": post.created_at,
+            "updated_at": post.updated_at,
+            "convocatoria_id": conv.id,
+            "convocatoria_codigo": conv.codigo,
+            "convocatoria_titulo": conv.titulo,
+            "convocatoria_status": conv.status.value,
+            "facultad": facultad_obj,
+            "puede_cancelar": (
+                post.estado == POST_ENVIADA
+                and conv.status == ConvocatoriaStatus.PUBLICADA
+            ),
+        }
+        for post, conv, facultad_obj in rows
+    ]
+    return templates.TemplateResponse(
+        request,
+        "mis_postulaciones.html",
+        {"user": user, "postulaciones": postulaciones},
+    )
+
+
+@app.post("/postulaciones/{post_id}/cancelar")
+def postulacion_cancelar(
+    request: Request,
+    post_id: int,
+    user: User = Depends(require_role(UserRole.ESTUDIANTE)),
+    session: Session = Depends(get_session),
+):
+    postulacion = session.exec(
+        select(Postulacion).where(Postulacion.id == post_id)
+    ).first()
+    if postulacion is None:
+        raise HTTPException(status_code=404, detail="Postulación no encontrada")
+    if postulacion.estudiante_id != user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Solo puedes cancelar tus propias postulaciones.",
+        )
+    conv = session.exec(
+        select(Convocatoria).where(Convocatoria.id == postulacion.convocatoria_id)
+    ).first()
+    if conv is None:
+        raise HTTPException(status_code=404, detail="Convocatoria no encontrada")
+    if conv.status != ConvocatoriaStatus.PUBLICADA:
+        _flash(
+            request,
+            "warning",
+            "Solo se puede cancelar mientras la convocatoria sigue PUBLICADA.",
+        )
+        return RedirectResponse("/mis-postulaciones", status_code=303)
+
+    try:
+        transicionar_postulacion(
+            postulacion,
+            POST_CANCELADA,
+            user,
+            conv,
+            motivo="cancelación voluntaria del estudiante",
+        )
+    except (TransicionInvalidaError, PermisoInsuficienteError) as e:
+        _flash(request, "danger", str(e))
+        return RedirectResponse("/mis-postulaciones", status_code=303)
+
+    session.add(postulacion)
+    session.commit()
+    log_audit(
+        session,
+        user_id=user.id,
+        action="POSTULACION_CANCELAR",
+        request=request,
+        entity_type="postulacion",
+        entity_id=None,
+        payload={"postulacion_id": postulacion.id, "convocatoria": conv.codigo},
+    )
+    _flash(
+        request,
+        "success",
+        f"Postulación a {conv.codigo} cancelada.",
+    )
+    return RedirectResponse("/mis-postulaciones", status_code=303)
+

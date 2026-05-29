@@ -95,11 +95,6 @@ class Convocatoria(SQLModel, table=True):
 
 class Postulacion(SQLModel, table=True):
     __tablename__ = "postulaciones"
-    __table_args__ = (
-        UniqueConstraint(
-            "convocatoria_id", "estudiante_id", name="uq_postulacion_conv_est"
-        ),
-    )
 
     id: Optional[int] = Field(default=None, primary_key=True)
     convocatoria_id: uuid.UUID = Field(
@@ -116,11 +111,17 @@ class Postulacion(SQLModel, table=True):
         default=None, sa_column=Column(Text, nullable=True)
     )
     estado: str = Field(default="ENVIADA", max_length=20, index=True)
-    """Valores válidos: ENVIADA, APROBADA, RECHAZADA, ADJUDICADA."""
+    """Valores válidos: ENVIADA, EN_REVISION, APROBADA, RECHAZADA, ADJUDICADA,
+    NO_ADJUDICADA, CANCELADA. La unicidad activa (convocatoria, estudiante)
+    excluye CANCELADA via partial index aplicado en run_migrations()."""
     decidida_por: Optional[uuid.UUID] = Field(
         default=None, foreign_key="users.id"
     )
     decidida_en: Optional[datetime] = None
+    historial_estados: list = Field(
+        default_factory=list,
+        sa_column=Column(JSONB, nullable=False, server_default="[]"),
+    )
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
 

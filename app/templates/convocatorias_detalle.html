@@ -76,6 +76,52 @@
   {% endif %}
 </div>
 
+{% if user.role.value == 'estudiante' %}
+<div class="udem-card" style="border-left:4px solid var(--udem-teal); margin-bottom:18px;">
+  {% if puede_postular %}
+    <h3 style="margin:0 0 6px 0; font-size:16px; color:var(--udem-negro); font-family:var(--font-display);">¿Quieres ser monitor en esta convocatoria?</h3>
+    <p style="font-size:13px; color:var(--udem-gris-texto); margin:0 0 14px 0;">
+      Al postularte, tu solicitud entra al flujo de revisión del coordinador. Podrás cancelarla mientras la convocatoria siga abierta.
+    </p>
+    <form method="post" action="/convocatorias/{{ convocatoria.id }}/postular" style="margin:0;">
+      <button type="submit" class="btn-udem" data-accion="postular">Postularme</button>
+    </form>
+  {% elif postulacion_activa %}
+    <h3 style="margin:0 0 6px 0; font-size:16px; color:var(--udem-negro); font-family:var(--font-display);">Mi postulación</h3>
+    <div class="mi-postulacion" data-postulacion-estado="{{ postulacion_activa.estado }}" style="display:flex; align-items:center; gap:12px; margin-top:8px;">
+      <span class="badge-estado badge-{{ postulacion_activa.estado | lower | replace('_', '-') }}">{{ postulacion_activa.estado }}</span>
+      <span style="font-size:13px; color:var(--udem-gris-texto);">
+        Enviada el {{ postulacion_activa.created_at.strftime('%d %b %Y · %H:%M') }}
+      </span>
+    </div>
+    {% if puede_cancelar_postulacion %}
+    <form method="post" action="/postulaciones/{{ postulacion_activa.id }}/cancelar" style="margin-top:14px;">
+      <button type="submit" class="btn-udem-outline" data-accion="cancelar-postulacion">Cancelar mi postulación</button>
+    </form>
+    {% else %}
+    <p style="font-size:13px; color:var(--udem-gris-texto); margin-top:10px;">
+      Esta postulación ya no se puede cancelar desde acá (estado o convocatoria no permite).
+    </p>
+    {% endif %}
+  {% elif postulacion_historica %}
+    <h3 style="margin:0 0 6px 0; font-size:16px; color:var(--udem-negro); font-family:var(--font-display);">Postulación previa</h3>
+    <p style="font-size:13px; color:var(--udem-gris-texto); margin:0;">
+      Tu postulación anterior está en estado <strong>{{ postulacion_historica.estado }}</strong>
+      desde el {{ postulacion_historica.updated_at.strftime('%d %b %Y') if postulacion_historica.updated_at else postulacion_historica.created_at.strftime('%d %b %Y') }}.
+    </p>
+    {% if convocatoria.status.value == 'publicada' %}
+    <form method="post" action="/convocatorias/{{ convocatoria.id }}/postular" style="margin-top:14px;">
+      <button type="submit" class="btn-udem" data-accion="postular">Postularme de nuevo</button>
+    </form>
+    {% endif %}
+  {% else %}
+    <p style="font-size:13px; color:var(--udem-gris-texto); margin:0;">
+      Esta convocatoria no está abierta para postulaciones en este momento.
+    </p>
+  {% endif %}
+</div>
+{% endif %}
+
 {% if transiciones %}
 <div class="udem-card" style="border-left:4px solid var(--udem-rojo);">
   <h3 style="margin:0 0 6px 0; font-size:16px; color:var(--udem-negro); font-family:var(--font-display);">Acciones disponibles</h3>

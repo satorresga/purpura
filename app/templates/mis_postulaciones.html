@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from '_macros.html' import chip_facultad %}
+{% block title %}Mis postulaciones · PÚRPURA{% endblock %}
+
+{% block content %}
+<h1 class="udem-section-title">Mis postulaciones</h1>
+<p class="udem-section-subtitle">
+  Estado actual de las postulaciones que enviaste. Podés cancelar las que sigan en revisión mientras la convocatoria esté publicada.
+</p>
+
+{% if postulaciones %}
+<table class="udem-table">
+  <thead>
+    <tr>
+      <th>Código</th>
+      <th>Convocatoria</th>
+      <th>Facultad</th>
+      <th>Estado</th>
+      <th>Enviada</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in postulaciones %}
+    <tr data-postulacion-id="{{ p.id }}" data-postulacion-estado="{{ p.estado }}" data-postulacion-conv-href="/convocatorias/{{ p.convocatoria_id }}">
+      <td><code>{{ p.convocatoria_codigo }}</code></td>
+      <td><a href="/convocatorias/{{ p.convocatoria_id }}" style="text-decoration:none; color:var(--udem-negro); font-weight:600;">{{ p.convocatoria_titulo }}</a></td>
+      <td>{{ chip_facultad(p.facultad) }}</td>
+      <td><span class="badge-estado badge-{{ p.estado | lower | replace('_', '-') }}">{{ p.estado }}</span></td>
+      <td style="font-size:12px; color:var(--udem-gris-texto);">
+        {{ p.created_at.strftime('%d %b %Y · %H:%M') }}
+      </td>
+      <td>
+        {% if p.puede_cancelar %}
+          <form method="post" action="/postulaciones/{{ p.id }}/cancelar" style="margin:0;">
+            <button type="submit" class="btn-udem-ghost" data-accion="cancelar-postulacion">Cancelar</button>
+          </form>
+        {% else %}
+          <a href="/convocatorias/{{ p.convocatoria_id }}" class="btn-udem-ghost">Ver</a>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="udem-card">
+  <p style="margin:0 0 12px 0; color:var(--udem-gris-texto);">Aún no has postulado a ninguna convocatoria.</p>
+  <a href="/convocatorias" class="btn-udem">Ver convocatorias abiertas</a>
+</div>
+{% endif %}
+{% endblock %}
