@@ -36,6 +36,10 @@ def run_migrations() -> None:
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS promedio_acumulado NUMERIC(3,2)",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS creditos_aprobados INTEGER",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS semestre_actual INTEGER",
+        (
+            "CREATE INDEX IF NOT EXISTS ix_notificaciones_usuario_leida "
+            "ON notificaciones (usuario_id, leida)"
+        ),
     ]
     with engine.begin() as conn:
         for stmt in column_statements:

@@ -17,6 +17,7 @@ from app.services.adjudicacion import (
     adjudicar_convocatoria,
 )
 from app.services.evaluacion_ia import evaluar_postulacion
+from app.services.notificar import crear_notificacion
 from app.services.transiciones import (
     POST_APROBADA,
     POST_CANCELADA,
@@ -65,6 +66,65 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
+
+
+def _time_ago(dt: Optional[datetime]) -> str:
+    if dt is None:
+        return ""
+    delta = datetime.utcnow() - dt
+    secs = int(delta.total_seconds())
+    if secs < 60:
+        return "ahora"
+    if secs < 3600:
+        m = secs // 60
+        return f"hace {m} min"
+    if secs < 86400:
+        h = secs // 3600
+        return f"hace {h} h"
+    if secs < 86400 * 7:
+        d = secs // 86400
+        return f"hace {d} d"
+    return dt.strftime("%d %b %Y")
+
+
+templates.env.filters["time_ago"] = _time_ago
+
+
+def _notif_ctx_user(session: Session, user: User) -> dict:
+    """Carga datos de notificación para el dropdown de la campana.
+
+    Devuelve {notif_count, notif_dropdown} para mergear al template
+    context. El count es exacto (no leídas); el dropdown trae las
+    últimas 5 no leídas, ordenadas por created_at desc.
+    """
+    from app.models import Notificacion as _N
+
+    count = len(
+        session.exec(
+            select(_N).where(_N.usuario_id == user.id).where(_N.leida.is_(False))
+        ).all()
+    )
+    items = session.exec(
+        select(_N)
+        .where(_N.usuario_id == user.id)
+        .where(_N.leida.is_(False))
+        .order_by(_N.created_at.desc())
+        .limit(5)
+    ).all()
+    return {
+        "notif_count": count,
+        "notif_dropdown": [
+            {
+                "id": n.id,
+                "titulo": n.titulo,
+                "cuerpo": n.cuerpo,
+                "url_destino": n.url_destino,
+                "created_at": n.created_at,
+            }
+            for n in items
+        ],
+    }
+
 
 CODIGO_REGEX = re.compile(r"^MON-\d{4}-\d{2}-[A-Z0-9]+$")
 
@@ -219,12 +279,11 @@ def logout(
 def dashboard(
     request: Request,
     user: User = Depends(require_login),
+    session: Session = Depends(get_session),
 ):
-    return templates.TemplateResponse(
-        request,
-        "dashboard.html",
-        {"user": user},
-    )
+    ctx = {"user": user}
+    ctx.update(_notif_ctx_user(session, user))
+    return templates.TemplateResponse(request, "dashboard.html", ctx)
 
 
 @app.get("/perfil")
@@ -1058,11 +1117,9 @@ def mis_postulaciones(
         }
         for post, conv, facultad_obj in rows
     ]
-    return templates.TemplateResponse(
-        request,
-        "mis_postulaciones.html",
-        {"user": user, "postulaciones": postulaciones},
-    )
+    ctx = {"user": user, "postulaciones": postulaciones}
+    ctx.update(_notif_ctx_user(session, user))
+    return templates.TemplateResponse(request, "mis_postulaciones.html", ctx)
 
 
 @app.post("/postulaciones/{post_id}/cancelar")
@@ -1239,19 +1296,17 @@ def bandeja(
             for post, conv, estudiante in rows
         ]
 
-    return templates.TemplateResponse(
-        request,
-        "bandeja.html",
-        {
-            "user": user,
-            "postulaciones": postulaciones,
-            "convocatorias_filtro": convs_visibles,
-            "filtro_estado": (estado or "activas").lower(),
-            "filtro_convocatoria": convocatoria or "",
-            "filtro_warning": warning == "true",
-            "filtro_ia": (ia or "").lower(),
-        },
-    )
+    ctx = {
+        "user": user,
+        "postulaciones": postulaciones,
+        "convocatorias_filtro": convs_visibles,
+        "filtro_estado": (estado or "activas").lower(),
+        "filtro_convocatoria": convocatoria or "",
+        "filtro_warning": warning == "true",
+        "filtro_ia": (ia or "").lower(),
+    }
+    ctx.update(_notif_ctx_user(session, user))
+    return templates.TemplateResponse(request, "bandeja.html", ctx)
 
 
 def _load_postulacion_or_404(
@@ -1343,6 +1398,38 @@ def postulacion_transicionar(
         )
 
     session.add(post)
+
+    _notif_titulo_cuerpo = {
+        POST_EN_REVISION: (
+            f"Tu postulación a {conv.codigo} está en revisión",
+            f"El coordinador comenzó la revisión de tu postulación a "
+            f"«{conv.titulo}».",
+        ),
+        POST_APROBADA: (
+            f"¡Postulación aprobada en {conv.codigo}!",
+            f"Tu postulación a «{conv.titulo}» fue aprobada. Falta la "
+            f"adjudicación final del administrador.",
+        ),
+        POST_RECHAZADA: (
+            f"Postulación rechazada en {conv.codigo}",
+            (
+                f"Tu postulación a «{conv.titulo}» fue rechazada. "
+                f"Motivo: {motivo}"
+                if (motivo or "").strip()
+                else f"Tu postulación a «{conv.titulo}» fue rechazada."
+            ),
+        ),
+    }
+    if post.estado in _notif_titulo_cuerpo:
+        titulo, cuerpo = _notif_titulo_cuerpo[post.estado]
+        crear_notificacion(
+            session,
+            usuario_id=estudiante.id,
+            titulo=titulo,
+            cuerpo=cuerpo,
+            url_destino=f"/convocatorias/{conv.id}",
+        )
+
     session.commit()
     log_audit(
         session,
@@ -1501,6 +1588,29 @@ def convocatorias_adjudicar_post(
         session.add(monitor)
     session.add(conv)
 
+    set_seleccionados = set(seleccionadas)
+    for post in postulaciones_aprobadas:
+        if post.id in set_seleccionados:
+            titulo = f"¡Has sido designado monitor de {conv.codigo}!"
+            cuerpo = (
+                f"Felicidades. Quedaste adjudicado como monitor de "
+                f"«{conv.titulo}» para el semestre {conv.semestre}."
+            )
+        else:
+            titulo = f"Adjudicación: no resultaste seleccionado en {conv.codigo}"
+            cuerpo = (
+                f"Tu postulación a «{conv.titulo}» fue aprobada pero no "
+                f"resultó adjudicada esta vez. Te animamos a postular a "
+                f"futuras convocatorias."
+            )
+        crear_notificacion(
+            session,
+            usuario_id=post.estudiante_id,
+            titulo=titulo,
+            cuerpo=cuerpo,
+            url_destino=f"/convocatorias/{conv.id}",
+        )
+
     try:
         session.commit()
     except Exception as e:
@@ -1531,4 +1641,117 @@ def convocatorias_adjudicar_post(
         f"{resumen['no_adjudicadas']} no adjudicadas.",
     )
     return RedirectResponse(f"/convocatorias/{conv.id}", status_code=303)
+
+
+# ============================================================
+# Mis monitorías + notificaciones (P07)
+# ============================================================
+
+
+@app.get("/mis-monitorias")
+def mis_monitorias(
+    request: Request,
+    user: User = Depends(require_role(UserRole.ESTUDIANTE)),
+    session: Session = Depends(get_session),
+):
+    from app.models import Monitor
+
+    rows = session.exec(
+        select(Monitor, Convocatoria, Facultad, Materia)
+        .join(Convocatoria, Monitor.convocatoria_id == Convocatoria.id)
+        .outerjoin(Facultad, Convocatoria.facultad_id == Facultad.id)
+        .outerjoin(Materia, Convocatoria.materia_id == Materia.id)
+        .where(Monitor.estudiante_id == user.id)
+        .order_by(Monitor.fecha_adjudicacion.desc())
+    ).all()
+    monitorias = [
+        {
+            "id": m.id,
+            "convocatoria_id": conv.id,
+            "convocatoria_codigo": conv.codigo,
+            "convocatoria_titulo": conv.titulo,
+            "facultad": facultad_obj,
+            "materia": materia_obj,
+            "fecha_adjudicacion": m.fecha_adjudicacion,
+            "semestre": m.semestre,
+            "estado": m.estado,
+        }
+        for m, conv, facultad_obj, materia_obj in rows
+    ]
+    ctx = {"user": user, "monitorias": monitorias}
+    ctx.update(_notif_ctx_user(session, user))
+    return templates.TemplateResponse(request, "mis_monitorias.html", ctx)
+
+
+@app.get("/notificaciones")
+def notificaciones_get(
+    request: Request,
+    user: User = Depends(require_login),
+    session: Session = Depends(get_session),
+):
+    from app.models import Notificacion as _N
+
+    rows = session.exec(
+        select(_N)
+        .where(_N.usuario_id == user.id)
+        .order_by(_N.leida.asc(), _N.created_at.desc())
+    ).all()
+    ctx = {
+        "user": user,
+        "notificaciones": [
+            {
+                "id": n.id,
+                "titulo": n.titulo,
+                "cuerpo": n.cuerpo,
+                "url_destino": n.url_destino,
+                "leida": n.leida,
+                "created_at": n.created_at,
+            }
+            for n in rows
+        ],
+    }
+    ctx.update(_notif_ctx_user(session, user))
+    return templates.TemplateResponse(request, "notificaciones.html", ctx)
+
+
+@app.post("/notificaciones/marcar-todas-leidas")
+def notificaciones_marcar_todas(
+    request: Request,
+    user: User = Depends(require_login),
+    session: Session = Depends(get_session),
+):
+    from app.models import Notificacion as _N
+
+    no_leidas = session.exec(
+        select(_N).where(_N.usuario_id == user.id).where(_N.leida.is_(False))
+    ).all()
+    for n in no_leidas:
+        n.leida = True
+        session.add(n)
+    session.commit()
+    _flash(request, "success", f"Marcadas {len(no_leidas)} notificaciones como leídas.")
+    return RedirectResponse("/notificaciones", status_code=303)
+
+
+@app.post("/notificaciones/{notif_id}/marcar-leida")
+def notificacion_marcar_leida(
+    request: Request,
+    notif_id: int,
+    user: User = Depends(require_login),
+    session: Session = Depends(get_session),
+):
+    from app.models import Notificacion as _N
+
+    notif = session.exec(
+        select(_N).where(_N.id == notif_id).where(_N.usuario_id == user.id)
+    ).first()
+    if notif is None:
+        raise HTTPException(status_code=404, detail="Notificación no encontrada")
+    if not notif.leida:
+        notif.leida = True
+        session.add(notif)
+        session.commit()
+    if notif.url_destino:
+        return RedirectResponse(notif.url_destino, status_code=303)
+    return RedirectResponse("/notificaciones", status_code=303)
 

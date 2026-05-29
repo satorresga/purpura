@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from '_macros.html' import chip_facultad %}
+{% block title %}Mis monitorías · PÚRPURA{% endblock %}
+
+{% block content %}
+<h1 class="udem-section-title">Mis monitorías</h1>
+<p class="udem-section-subtitle">
+  Monitorías académicas activas que te fueron asignadas tras ganar una adjudicación.
+</p>
+
+{% if monitorias %}
+<table class="udem-table">
+  <thead>
+    <tr>
+      <th>Código</th>
+      <th>Convocatoria</th>
+      <th>Facultad</th>
+      <th>Materia</th>
+      <th>Semestre</th>
+      <th>Adjudicada</th>
+      <th>Estado</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for m in monitorias %}
+    <tr data-monitor-id="{{ m.id }}" data-monitor-estado="{{ m.estado }}">
+      <td><code>{{ m.convocatoria_codigo }}</code></td>
+      <td><strong>{{ m.convocatoria_titulo }}</strong></td>
+      <td>{{ chip_facultad(m.facultad) }}</td>
+      <td>
+        {% if m.materia %}
+          <code>{{ m.materia.codigo }}</code> — {{ m.materia.nombre }}
+        {% else %}
+          <span style="color:var(--udem-gris-claro);">—</span>
+        {% endif %}
+      </td>
+      <td>{{ m.semestre or '—' }}</td>
+      <td style="font-size:12px; color:var(--udem-gris-texto);">
+        {{ m.fecha_adjudicacion.strftime('%d %b %Y') }}
+      </td>
+      <td>
+        <span class="badge-estado badge-{{ m.estado | lower | replace('_', '-') }}">{{ m.estado }}</span>
+      </td>
+      <td>
+        <a href="/convocatorias/{{ m.convocatoria_id }}" class="btn-udem-ghost">Ver convocatoria</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="udem-card">
+  <p style="margin:0 0 12px 0; color:var(--udem-gris-texto);">
+    Aún no tienes monitorías activas. Postúlate a las convocatorias disponibles.
+  </p>
+  <a href="/convocatorias" class="btn-udem">Ver convocatorias</a>
+</div>
+{% endif %}
+{% endblock %}

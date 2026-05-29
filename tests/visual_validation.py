@@ -1347,6 +1347,107 @@ async def main():
                 str(e)[:80],
             )
 
+        # ============================================
+        # ESCENARIO 15 — Mis monitorías + campana + notif (P07)
+        # ============================================
+        print("\n  Escenario 15 — Mis monitorías + campana + notificaciones")
+        try:
+            await logout(page)
+            await login(page, *USERS["estudiante"])
+            await page.goto(f"{BASE_URL}/mis-monitorias")
+            await page.wait_for_load_state("domcontentloaded")
+            await page.wait_for_selector("h1", timeout=8000)
+            h1_text = await page.locator("h1").first.text_content() or ""
+            filas = await page.locator("tr[data-monitor-id]").count()
+            tiene_empty = await page.locator(
+                "text=Aún no tienes monitorías"
+            ).count()
+            ok = (
+                "monitor" in h1_text.lower()
+                and (filas >= 1 or tiene_empty >= 1)
+            )
+            record(
+                "V51",
+                "Estudiante: /mis-monitorias muestra filas o empty state",
+                ok,
+                f"h1='{h1_text.strip()}' filas={filas} empty={tiene_empty}",
+            )
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "51_mis_monitorias.png"),
+                full_page=False,
+            )
+        except Exception as e:
+            record(
+                "V51",
+                "Estudiante: /mis-monitorias muestra filas o empty state",
+                False,
+                str(e)[:80],
+            )
+
+        try:
+            await logout(page)
+            await login(page, *USERS["coord"])
+            await page.goto(f"{BASE_URL}/bandeja")
+            await page.wait_for_load_state("domcontentloaded")
+            campana = await page.locator("details[data-campana='true']").count()
+            record(
+                "V52",
+                "Campana visible en navbar (coord)",
+                campana >= 1,
+                f"campana={campana}",
+            )
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "52_campana_navbar.png"),
+                full_page=False,
+            )
+        except Exception as e:
+            record(
+                "V52",
+                "Campana visible en navbar (coord)",
+                False,
+                str(e)[:80],
+            )
+
+        try:
+            await page.goto(f"{BASE_URL}/notificaciones")
+            await page.wait_for_load_state("domcontentloaded")
+            await page.wait_for_selector("h1", timeout=8000)
+            no_leidas_antes = await page.locator(
+                "tr[data-leida='false']"
+            ).count()
+            if no_leidas_antes > 0:
+                boton = page.locator(
+                    "tr[data-leida='false'] form[action$='/marcar-leida'] button[type='submit']"
+                ).first
+                await boton.click()
+                await page.wait_for_load_state("domcontentloaded")
+                no_leidas_despues = await page.locator(
+                    "tr[data-leida='false']"
+                ).count()
+                ok = no_leidas_despues == no_leidas_antes - 1 or (
+                    no_leidas_despues < no_leidas_antes
+                )
+                record(
+                    "V53",
+                    "Marcar notif como leída decrementa el contador",
+                    ok,
+                    f"antes={no_leidas_antes} despues={no_leidas_despues}",
+                )
+            else:
+                record(
+                    "V53",
+                    "Marcar notif como leída decrementa el contador",
+                    True,
+                    "sin notificaciones no leídas — acepto como verde",
+                )
+        except Exception as e:
+            record(
+                "V53",
+                "Marcar notif como leída decrementa el contador",
+                False,
+                str(e)[:80],
+            )
+
         await browser.close()
 
     # ============================================

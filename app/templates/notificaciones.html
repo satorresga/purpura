@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Notificaciones · PÚRPURA{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
+  <div>
+    <h1 class="udem-section-title">Notificaciones</h1>
+    <p class="udem-section-subtitle">
+      Todas las novedades sobre tus convocatorias y postulaciones.
+    </p>
+  </div>
+  {% set hay_no_leidas = notificaciones | selectattr('leida', 'equalto', false) | list | length > 0 %}
+  {% if hay_no_leidas %}
+  <form method="post" action="/notificaciones/marcar-todas-leidas" style="margin:0;">
+    <button type="submit" class="btn-udem-outline" data-accion="marcar-todas-leidas">Marcar todas como leídas</button>
+  </form>
+  {% endif %}
+</div>
+
+{% if notificaciones %}
+<table class="udem-table">
+  <thead>
+    <tr>
+      <th>Notificación</th>
+      <th>Cuándo</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for n in notificaciones %}
+    <tr data-notif-id="{{ n.id }}" data-leida="{{ 'true' if n.leida else 'false' }}" class="{% if not n.leida %}no-leida{% endif %}"
+        style="{% if not n.leida %}background:rgba(200,32,45,0.03);{% endif %}">
+      <td>
+        {% if not n.leida %}<strong style="color:var(--udem-rojo); margin-right:6px;">•</strong>{% endif %}
+        <strong>{{ n.titulo }}</strong>
+        {% if n.cuerpo %}
+          <div style="font-size:13px; color:var(--udem-gris-texto); margin-top:4px;">{{ n.cuerpo }}</div>
+        {% endif %}
+      </td>
+      <td style="font-size:12px; color:var(--udem-gris-texto); white-space:nowrap;">
+        {{ n.created_at | time_ago }}
+      </td>
+      <td>
+        {% if not n.leida %}
+          <form method="post" action="/notificaciones/{{ n.id }}/marcar-leida" style="margin:0;">
+            <button type="submit" class="btn-udem-ghost" data-accion="marcar-leida">
+              {% if n.url_destino %}Ir y marcar leída{% else %}Marcar leída{% endif %}
+            </button>
+          </form>
+        {% elif n.url_destino %}
+          <a href="{{ n.url_destino }}" class="btn-udem-ghost">Ver</a>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="udem-card">
+  <p style="margin:0; color:var(--udem-gris-texto);">No tienes notificaciones todavía.</p>
+</div>
+{% endif %}
+{% endblock %}
