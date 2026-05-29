@@ -87,6 +87,10 @@ class Convocatoria(SQLModel, table=True):
         default=None, foreign_key="materias.id", index=True
     )
     semestre: str = Field(default="2026-1", max_length=20)
+    historial_estados: list = Field(
+        default_factory=list,
+        sa_column=Column(JSONB, nullable=False, server_default="[]"),
+    )
 
 
 class Postulacion(SQLModel, table=True):

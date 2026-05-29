@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Editar {{ convocatoria.codigo }} · PÚRPURA{% endblock %}
+
+{% block content %}
+<a href="/convocatorias/{{ convocatoria.id }}" style="font-size:13px; color:var(--udem-gris-texto); text-decoration:none;">&larr; Volver al detalle</a>
+<h1 class="udem-section-title" style="margin-top:6px;">Editar convocatoria</h1>
+<p class="udem-section-subtitle">
+  <code>{{ convocatoria.codigo }}</code> · solo se pueden editar convocatorias en <strong>BORRADOR</strong>.
+</p>
+
+<div class="udem-card">
+  {% if error %}
+  <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" action="/convocatorias/{{ convocatoria.id }}/editar" novalidate>
+    <div class="row g-3">
+      <div class="col-12">
+        <label for="titulo">Título</label>
+        <input type="text" class="form-control" id="titulo" name="titulo" maxlength="255"
+               value="{{ form.titulo or '' }}" required>
+      </div>
+
+      <div class="col-md-6">
+        <label for="facultad">Facultad (texto libre)</label>
+        <input type="text" class="form-control" id="facultad" name="facultad" maxlength="255"
+               value="{{ form.facultad or '' }}" required>
+      </div>
+      <div class="col-md-6">
+        <label for="asignatura">Asignatura</label>
+        <input type="text" class="form-control" id="asignatura" name="asignatura" maxlength="255"
+               value="{{ form.asignatura or '' }}" required>
+      </div>
+
+      <div class="col-12">
+        <label for="descripcion">Descripción</label>
+        <textarea class="form-control" id="descripcion" name="descripcion" rows="3">{{ form.descripcion or '' }}</textarea>
+      </div>
+
+      <div class="col-md-3">
+        <label for="cupos">Cupos</label>
+        <input type="number" class="form-control" id="cupos" name="cupos" min="1"
+               value="{{ form.cupos }}" required>
+      </div>
+      <div class="col-md-4">
+        <label for="fecha_apertura">Fecha apertura</label>
+        <input type="datetime-local" class="form-control" id="fecha_apertura" name="fecha_apertura"
+               value="{{ form.fecha_apertura }}" required>
+      </div>
+      <div class="col-md-5">
+        <label for="fecha_cierre">Fecha cierre</label>
+        <input type="datetime-local" class="form-control" id="fecha_cierre" name="fecha_cierre"
+               value="{{ form.fecha_cierre }}" required>
+      </div>
+    </div>
+
+    <fieldset style="border:1px solid var(--udem-borde); border-radius:var(--radius-sm); padding:14px 18px; margin-top:20px;">
+      <legend style="float:none; width:auto; padding:0 8px; font-size:12px; color:var(--udem-gris-texto); text-transform:uppercase; letter-spacing:0.5px;">Requisitos (opcional)</legend>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label for="promedio_minimo">Promedio mínimo</label>
+          <input type="number" class="form-control" id="promedio_minimo" name="promedio_minimo"
+                 step="0.1" min="0" max="5"
+                 value="{{ form.promedio_minimo or '' }}">
+        </div>
+        <div class="col-md-4">
+          <label for="creditos_minimos">Créditos mínimos</label>
+          <input type="number" class="form-control" id="creditos_minimos" name="creditos_minimos"
+                 min="0" value="{{ form.creditos_minimos or '' }}">
+        </div>
+        <div class="col-md-4">
+          <label for="semestre_minimo">Semestre mínimo</label>
+          <input type="number" class="form-control" id="semestre_minimo" name="semestre_minimo"
+                 min="1" max="12" value="{{ form.semestre_minimo or '' }}">
+        </div>
+      </div>
+    </fieldset>
+
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:24px;">
+      <a href="/convocatorias/{{ convocatoria.id }}" class="btn-udem-outline">Cancelar</a>
+      <button type="submit" class="btn-udem">Guardar cambios</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

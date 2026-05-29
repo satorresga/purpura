@@ -42,7 +42,7 @@
         <a href="/convocatorias" {% if '/convocatorias' in request.url.path and 'abiertas' not in request.url.path %}class="active"{% endif %}>Convocatorias</a>
       {% endif %}
       {% if rol == 'estudiante' %}
-        <a href="/convocatorias-abiertas" {% if 'abiertas' in request.url.path %}class="active"{% endif %}>Convocatorias</a>
+        <a href="/convocatorias" {% if '/convocatorias' in request.url.path %}class="active"{% endif %}>Convocatorias</a>
         <a href="/mis-postulaciones" {% if 'postulaciones' in request.url.path %}class="active"{% endif %}>Mis postulaciones</a>
         <a href="/mis-monitorias" {% if 'monitorias' in request.url.path %}class="active"{% endif %}>Mis monitorías</a>
       {% endif %}

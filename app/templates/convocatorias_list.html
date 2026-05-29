@@ -3,20 +3,27 @@
 {% block title %}Convocatorias · PÚRPURA{% endblock %}
 
 {% block content %}
-<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:18px;">
+<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:18px; gap:12px; flex-wrap:wrap;">
   <div>
     <h1 class="udem-section-title">Convocatorias</h1>
     <p class="udem-section-subtitle">
       {% if request.session.get('rol') == 'administrador' %}
-        Vista global de todas las convocatorias del sistema.
+        Vista global de todas las convocatorias activas (excluye archivadas).
+      {% elif request.session.get('rol') == 'coordinador' %}
+        Vista de coordinación: todas las convocatorias activas del sistema.
       {% else %}
-        Convocatorias creadas por tu coordinación.
+        Convocatorias publicadas disponibles para postularte.
       {% endif %}
     </p>
   </div>
-  {% if request.session.get('rol') in ['administrador', 'coordinador'] %}
-    <a href="/convocatorias/nueva" class="btn-udem">+ Nueva convocatoria</a>
-  {% endif %}
+  <div style="display:flex; gap:10px;">
+    {% if request.session.get('rol') == 'administrador' %}
+      <a href="/convocatorias/archivadas" class="btn-udem-outline" style="font-size:13px;">Ver archivadas</a>
+    {% endif %}
+    {% if request.session.get('rol') in ['administrador', 'coordinador'] %}
+      <a href="/convocatorias/crear" class="btn-udem">+ Nueva convocatoria</a>
+    {% endif %}
+  </div>
 </div>
 
 {% if convocatorias %}
@@ -33,14 +40,17 @@
   </thead>
   <tbody>
     {% for c in convocatorias %}
-    <tr>
+    <tr data-conv-id="{{ c.id }}" data-conv-status="{{ c.status }}">
       <td><code>{{ c.codigo }}</code></td>
       <td><strong>{{ c.titulo }}</strong></td>
       <td>{{ chip_facultad(c.facultad) }}</td>
       <td>{{ c.semestre or '—' }}</td>
       <td>{{ badge_estado(c.status) }}</td>
-      <td>
+      <td style="display:flex; gap:8px;">
         <a href="/convocatorias/{{ c.id }}" class="btn-udem-ghost">Ver</a>
+        {% if c.puede_editar %}
+          <a href="/convocatorias/{{ c.id }}/editar" class="btn-udem-ghost">Editar</a>
+        {% endif %}
       </td>
     </tr>
     {% endfor %}

@@ -24,6 +24,7 @@ def run_migrations() -> None:
         "ALTER TABLE convocatorias ADD COLUMN IF NOT EXISTS facultad_id INTEGER REFERENCES facultades(id)",
         "ALTER TABLE convocatorias ADD COLUMN IF NOT EXISTS materia_id INTEGER REFERENCES materias(id)",
         "ALTER TABLE convocatorias ADD COLUMN IF NOT EXISTS semestre VARCHAR(20) NOT NULL DEFAULT '2026-1'",
+        "ALTER TABLE convocatorias ADD COLUMN IF NOT EXISTS historial_estados JSONB NOT NULL DEFAULT '[]'::jsonb",
     ]
     with engine.begin() as conn:
         for stmt in column_statements:

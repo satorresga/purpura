@@ -12,6 +12,7 @@ Variables de entorno opcionales:
 """
 import asyncio
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -429,6 +430,138 @@ async def main():
         except Exception as e:
             record("V29", "Navbar global: link Documentación visible sin sesión",
                    False, str(e)[:80])
+
+        # ============================================
+        # ESCENARIO 9 — CRUD + transiciones de convocatorias (P02)
+        # ============================================
+        print("\n  Escenario 9 — CRUD + transiciones (P02)")
+        await ctx.clear_cookies()
+        await login(page, *USERS["admin"])
+        await page.goto(f"{BASE_URL}/convocatorias")
+        await page.wait_for_load_state("domcontentloaded")
+        href_detalle = None
+        href_borrador = None
+        try:
+            await page.wait_for_selector("tr[data-conv-id]", timeout=8000)
+            primera = page.locator(
+                "tr[data-conv-id] a[href^='/convocatorias/']:not([href*='editar']):not([href*='archiv'])"
+            ).first
+            href_detalle = await primera.get_attribute("href")
+            await primera.click()
+            await page.wait_for_load_state("domcontentloaded")
+            await page.wait_for_selector("h1", timeout=8000)
+            botones = await page.locator("button.btn-transicion").count()
+            ok = (
+                href_detalle
+                and re.match(r"^/convocatorias/[a-f0-9-]+$", href_detalle)
+                and botones >= 1
+            )
+            record(
+                "V30",
+                "Admin: detalle convocatoria con botones de transición",
+                ok,
+                f"href={href_detalle} botones={botones}",
+            )
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "30_detalle_admin.png"),
+                full_page=False,
+            )
+        except Exception as e:
+            record(
+                "V30",
+                "Admin: detalle convocatoria con botones de transición",
+                False,
+                str(e)[:80],
+            )
+
+        try:
+            await logout(page)
+            await login(page, *USERS["estudiante"])
+            if href_detalle:
+                await page.goto(f"{BASE_URL}{href_detalle}")
+                await page.wait_for_load_state("domcontentloaded")
+                url_final = page.url
+                botones_est = await page.locator("button.btn-transicion").count()
+                ok = botones_est == 0
+                record(
+                    "V31",
+                    "Estudiante: detalle sin botones de transición",
+                    ok,
+                    f"botones={botones_est} url={url_final}",
+                )
+            else:
+                record(
+                    "V31",
+                    "Estudiante: detalle sin botones de transición",
+                    False,
+                    "V30 no produjo href_detalle",
+                )
+        except Exception as e:
+            record(
+                "V31",
+                "Estudiante: detalle sin botones de transición",
+                False,
+                str(e)[:80],
+            )
+
+        try:
+            await logout(page)
+            await login(page, *USERS["admin"])
+            await page.goto(f"{BASE_URL}/convocatorias")
+            await page.wait_for_load_state("domcontentloaded")
+            borrador_row = page.locator(
+                "tr[data-conv-id][data-conv-status='borrador']"
+            ).first
+            conv_id = await borrador_row.get_attribute("data-conv-id")
+            if not conv_id:
+                raise RuntimeError("No hay convocatoria BORRADOR en el listado")
+            resp = await page.request.post(
+                f"{BASE_URL}/convocatorias/{conv_id}/transicionar",
+                form={"nuevo_estado": "ADJUDICADA", "motivo": "smoke V32"},
+                max_redirects=0,
+            )
+            await page.goto(f"{BASE_URL}/convocatorias/{conv_id}")
+            await page.wait_for_load_state("domcontentloaded")
+            alert_danger = await page.locator(".alert-danger").count()
+            status_code = resp.status
+            ok = status_code in (303, 400, 422) and alert_danger >= 1
+            record(
+                "V32",
+                "Transición inválida BORRADOR→ADJUDICADA rechazada con flash",
+                ok,
+                f"status={status_code} alert_danger={alert_danger}",
+            )
+        except Exception as e:
+            record(
+                "V32",
+                "Transición inválida BORRADOR→ADJUDICADA rechazada con flash",
+                False,
+                str(e)[:80],
+            )
+
+        try:
+            await page.goto(f"{BASE_URL}/convocatorias/archivadas")
+            await page.wait_for_load_state("domcontentloaded")
+            await page.wait_for_selector("h1", timeout=8000)
+            h1_text = await page.locator("h1").first.text_content()
+            ok = h1_text is not None and "rchivad" in h1_text.lower()
+            record(
+                "V33",
+                "Admin: /convocatorias/archivadas accesible",
+                ok,
+                f"h1='{(h1_text or '').strip()}'",
+            )
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "33_archivadas.png"),
+                full_page=False,
+            )
+        except Exception as e:
+            record(
+                "V33",
+                "Admin: /convocatorias/archivadas accesible",
+                False,
+                str(e)[:80],
+            )
 
         await browser.close()
 
