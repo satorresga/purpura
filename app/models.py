@@ -1,8 +1,9 @@
 import enum
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 
+from sqlalchemy import Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Column, Field, SQLModel
 
@@ -19,6 +20,7 @@ class ConvocatoriaStatus(str, enum.Enum):
     PUBLICADA = "publicada"
     CERRADA = "cerrada"
     ARCHIVADA = "archivada"
+    ADJUDICADA = "adjudicada"
 
 
 class User(SQLModel, table=True):
@@ -33,6 +35,27 @@ class User(SQLModel, table=True):
     last_login_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class Facultad(SQLModel, table=True):
+    __tablename__ = "facultades"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    nombre: str = Field(unique=True, max_length=120)
+    codigo: str = Field(unique=True, max_length=40)
+    color_hex: str = Field(max_length=7)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class Materia(SQLModel, table=True):
+    __tablename__ = "materias"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    facultad_id: int = Field(foreign_key="facultades.id", index=True)
+    codigo: str = Field(unique=True, max_length=20)
+    nombre: str = Field(max_length=255)
+    creditos: int = Field(default=3)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class Convocatoria(SQLModel, table=True):
@@ -57,6 +80,75 @@ class Convocatoria(SQLModel, table=True):
     created_by: uuid.UUID = Field(foreign_key="users.id", index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    facultad_id: Optional[int] = Field(
+        default=None, foreign_key="facultades.id", index=True
+    )
+    materia_id: Optional[int] = Field(
+        default=None, foreign_key="materias.id", index=True
+    )
+    semestre: str = Field(default="2026-1", max_length=20)
+
+
+class Postulacion(SQLModel, table=True):
+    __tablename__ = "postulaciones"
+    __table_args__ = (
+        UniqueConstraint(
+            "convocatoria_id", "estudiante_id", name="uq_postulacion_conv_est"
+        ),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    convocatoria_id: uuid.UUID = Field(
+        foreign_key="convocatorias.id", index=True
+    )
+    estudiante_id: uuid.UUID = Field(foreign_key="users.id", index=True)
+    promedio_acumulado: float
+    motivacion: str = Field(sa_column=Column(Text, nullable=False))
+    archivo_pdf_path: Optional[str] = Field(default=None, max_length=512)
+    score_automatico: Optional[float] = None
+    decision_automatica: str = Field(default="PENDIENTE", max_length=20)
+    """Valores válidos: PENDIENTE, APTA, NO_APTA, REVISAR."""
+    justificacion_automatica: Optional[str] = Field(
+        default=None, sa_column=Column(Text, nullable=True)
+    )
+    estado: str = Field(default="ENVIADA", max_length=20, index=True)
+    """Valores válidos: ENVIADA, APROBADA, RECHAZADA, ADJUDICADA."""
+    decidida_por: Optional[uuid.UUID] = Field(
+        default=None, foreign_key="users.id"
+    )
+    decidida_en: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = None
+
+
+class Monitor(SQLModel, table=True):
+    __tablename__ = "monitores"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    postulacion_id: int = Field(
+        foreign_key="postulaciones.id", unique=True
+    )
+    convocatoria_id: uuid.UUID = Field(
+        foreign_key="convocatorias.id", index=True
+    )
+    estudiante_id: uuid.UUID = Field(foreign_key="users.id", index=True)
+    fecha_adjudicacion: date
+    semestre: str = Field(max_length=20)
+    estado: str = Field(default="ACTIVO", max_length=20)
+    """Valores válidos: ACTIVO, FINALIZADO."""
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class Notificacion(SQLModel, table=True):
+    __tablename__ = "notificaciones"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    usuario_id: uuid.UUID = Field(foreign_key="users.id", index=True)
+    titulo: str = Field(max_length=255)
+    cuerpo: str = Field(sa_column=Column(Text, nullable=False))
+    url_destino: Optional[str] = Field(default=None, max_length=512)
+    leida: bool = Field(default=False, index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class AuditLog(SQLModel, table=True):
@@ -65,6 +157,9 @@ class AuditLog(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: Optional[uuid.UUID] = Field(default=None, index=True)
     action: str = Field(max_length=100, index=True)
+    """Valores válidos: LOGIN, LOGOUT, CREATE_CONVOCATORIA, PUBLICAR_CONVOCATORIA,
+    CERRAR_CONVOCATORIA, POSTULAR, APROBAR_POSTULACION, RECHAZAR_POSTULACION,
+    ADJUDICAR_MONITOR, EXPORTAR_REPORTE."""
     entity_type: Optional[str] = Field(default=None, max_length=100)
     entity_id: Optional[uuid.UUID] = None
     payload: Optional[dict] = Field(default=None, sa_column=Column(JSONB))

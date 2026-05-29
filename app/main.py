@@ -18,7 +18,7 @@ from app.auth import (
     verify_password,
 )
 from app.config import get_settings
-from app.db import get_session, init_db
+from app.db import get_session, init_db, run_migrations
 from app.models import Convocatoria, ConvocatoriaStatus, User, UserRole
 
 settings = get_settings()
@@ -42,6 +42,7 @@ CODIGO_REGEX = re.compile(r"^MON-\d{4}-\d{2}-[A-Z0-9]+$")
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
+    run_migrations()
 
 
 @app.exception_handler(HTTPException)
