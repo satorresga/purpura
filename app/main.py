@@ -119,6 +119,16 @@ def login_get(
     )
 
 
+@app.get("/documentacion")
+def documentacion(request: Request):
+    """Documentación pública del sistema. Accesible con o sin sesión."""
+    return templates.TemplateResponse(
+        request,
+        "documentacion.html",
+        {"user": None},
+    )
+
+
 @app.post("/login")
 def login_post(
     request: Request,

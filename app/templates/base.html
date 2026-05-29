@@ -50,6 +50,7 @@
       {% if rol == 'administrador' %}
         <a href="/admin/panel" {% if '/admin' in request.url.path %}class="active"{% endif %}>Panel</a>
       {% endif %}
+      <a href="/documentacion" {% if request.url.path == '/documentacion' %}class="active"{% endif %}>Documentación</a>
     </nav>
 
     <div class="user-menu">
@@ -60,6 +61,10 @@
       </form>
     </div>
     {% else %}
+    <div class="navbar-links">
+      <a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">Inicio</a>
+      <a href="/documentacion" class="nav-link {% if request.url.path == '/documentacion' %}active{% endif %}">Documentación</a>
+    </div>
     {% block navbar_actions %}
     <div class="navbar-actions">
       <a href="/login" class="btn-iniciar-sesion">Iniciar sesión</a>

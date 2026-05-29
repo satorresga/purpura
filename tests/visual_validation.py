@@ -397,6 +397,39 @@ async def main():
             record("V27", "Login: tab coordinador activo rojo Figma",
                    False, str(e)[:80])
 
+        # ============================================
+        # ESCENARIO 8 — Documentación pública (P01.5c)
+        # ============================================
+        print("\n  Escenario 8 — Documentación pública")
+        await page.goto(f"{BASE_URL}/documentacion")
+        await page.wait_for_load_state("domcontentloaded")
+        try:
+            await page.wait_for_selector(".doc-hero", timeout=10000)
+            h1_text = await page.locator(".doc-hero h1").first.text_content()
+            cards = await page.locator(".doc-card").count()
+            ok = h1_text and "Documentación" in h1_text and cards == 6
+            record("V28", "Documentación: hero + 6 cards",
+                   ok, f"h1='{(h1_text or '').strip()}' cards={cards}")
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "28_documentacion.png"),
+                full_page=True,
+            )
+        except Exception as e:
+            record("V28", "Documentación: hero + 6 cards", False, str(e)[:80])
+
+        await ctx.clear_cookies()
+        await page.goto(f"{BASE_URL}/")
+        await page.wait_for_load_state("domcontentloaded")
+        try:
+            await page.wait_for_selector(".navbar-links", timeout=8000)
+            doc_link = page.locator(".navbar-links a[href='/documentacion']").first
+            visible = await doc_link.is_visible()
+            record("V29", "Navbar global: link Documentación visible sin sesión",
+                   visible, f"visible={visible}")
+        except Exception as e:
+            record("V29", "Navbar global: link Documentación visible sin sesión",
+                   False, str(e)[:80])
+
         await browser.close()
 
     # ============================================

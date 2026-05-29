@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Documentación · PÚRPURA · Universidad de Medellín{% endblock %}
+{% block main_class %}{% endblock %}
+
+{% block content %}
+<section class="hero-rojo doc-hero">
+  <div class="contenedor">
+    <div class="breadcrumb">CENTRO DE AYUDA</div>
+    <h1>Documentación</h1>
+    <p class="descripcion">
+      Información clave sobre el Sistema de Monitorías Académicas de la
+      Universidad de Medellín. Encuentra aquí respuestas a las preguntas
+      más comunes del programa.
+    </p>
+  </div>
+</section>
+
+<section class="seccion-docs">
+  <div class="contenedor">
+    <div class="docs-grid">
+
+      <article class="doc-card">
+        <div class="doc-icono">📘</div>
+        <h2>¿Qué es una monitoría?</h2>
+        <p>
+          Programa institucional donde estudiantes destacados apoyan a sus
+          compañeros bajo la supervisión de un docente tutor. Coordinado por
+          la Vicerrectoría Académica de la UdeMedellín.
+        </p>
+      </article>
+
+      <article class="doc-card">
+        <div class="doc-icono">📝</div>
+        <h2>¿Cómo postularse?</h2>
+        <p>
+          Regístrate con tu correo institucional, revisa las convocatorias
+          activas, carga los documentos requeridos y sigue el estado de tu
+          candidatura desde tu perfil en tiempo real.
+        </p>
+      </article>
+
+      <article class="doc-card">
+        <div class="doc-icono">👥</div>
+        <h2>Roles del sistema</h2>
+        <p>
+          Estudiantes, coordinadores y administradores tienen vistas y
+          permisos diferenciados por perfil. Cada rol accede a las funciones
+          que su responsabilidad académica requiere.
+        </p>
+      </article>
+
+      <article class="doc-card">
+        <div class="doc-icono">✓</div>
+        <h2>Requisitos</h2>
+        <p>
+          Promedio mínimo definido por convocatoria, créditos aprobados
+          suficientes, documentos de soporte y sin sanciones disciplinarias
+          vigentes. Los filtros automáticos validan tu elegibilidad.
+        </p>
+      </article>
+
+      <article class="doc-card">
+        <div class="doc-icono">📅</div>
+        <h2>Calendario</h2>
+        <p>
+          Cada convocatoria tiene fechas de apertura y cierre definidas. Al
+          ingresar al sistema podrás consultar los plazos vigentes y los
+          próximos a abrirse en el semestre académico.
+        </p>
+      </article>
+
+      <article class="doc-card">
+        <div class="doc-icono">💬</div>
+        <h2>Soporte</h2>
+        <p>
+          ¿Dudas o inconvenientes? Escríbenos a
+          <a href="mailto:monitorias@udemedellin.edu.co">monitorias@udemedellin.edu.co</a>
+          o acércate a la oficina de gestión académica del campus.
+        </p>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<section class="doc-cta">
+  <div class="contenedor cta-bloque">
+    <h2>¿Listo para postularte?</h2>
+    <p>Revisa las convocatorias activas y empieza tu proceso hoy.</p>
+    {% if request.session.get('user_id') %}
+      <a href="/convocatorias" class="btn-cta-grande">VER CONVOCATORIAS</a>
+    {% else %}
+      <a href="/login?rol=estudiante" class="btn-cta-grande">INICIAR SESIÓN</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
