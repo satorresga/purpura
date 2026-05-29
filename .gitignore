@@ -27,4 +27,5 @@ deploy/.env.*
 # E2E test artifacts
 tests/uvicorn_e2e.log
 tests/screenshots/p01_validation/
+tests/screenshots/p01_logo_smoke/
 

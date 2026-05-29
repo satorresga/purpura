@@ -26,6 +26,8 @@ SLOW_MO = int(os.getenv("SLOW_MO", "350"))
 
 SCREENSHOTS_DIR = Path("tests/screenshots/p01_validation")
 SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
+SCREENSHOTS_LOGO_DIR = Path("tests/screenshots/p01_logo_smoke")
+SCREENSHOTS_LOGO_DIR.mkdir(parents=True, exist_ok=True)
 
 # El seed P00 conservó admin@purpura.local del Sprint 1 (no admin@udem.edu.co
 # que asumió el prompt). Las otras credenciales coinciden con el seed real.
@@ -108,24 +110,27 @@ async def main():
         await shot(page, "01_login")
 
         try:
-            await expect(page.locator("text=Universidad de Medellín").first).to_be_visible(timeout=3000)
-            record("V01", "Marca 'Universidad de Medellín' visible en login", True)
+            alt = await page.locator(".marca-institucional img").first.get_attribute("alt")
+            ok = alt is not None and "Universidad de Medellín" in alt
+            record("V01", "Marca 'Universidad de Medellín' en alt del logo",
+                   ok, f"alt: {alt}")
         except Exception as e:
-            record("V01", "Marca 'Universidad de Medellín' visible en login", False, str(e)[:80])
+            record("V01", "Marca 'Universidad de Medellín' en alt del logo", False, str(e)[:80])
 
         try:
-            count = await page.locator(".escudo-grande, .escudo").count()
-            record("V02", "Bloque-escudo institucional presente", count > 0, f"encontrados: {count}")
+            count = await page.locator("img[src*='logosimbolo-udem']").count()
+            record("V02", "Logosímbolo oficial UdeM presente",
+                   count > 0, f"encontrados: {count}")
         except Exception as e:
-            record("V02", "Bloque-escudo institucional presente", False, str(e)[:80])
+            record("V02", "Logosímbolo oficial UdeM presente", False, str(e)[:80])
 
         bc = await computed_style(page, ".login-card", "border-top-color")
         record("V03", "Borde superior rojo en login card",
                bc == UDEM_RED, f"actual: {bc}")
 
-        ff = await computed_style(page, ".login-card h1, h1", "font-family")
-        record("V04", "Tipografía Helvetica en heading",
-               ff is not None and "elvetica" in ff, f"actual: {ff}")
+        ff = await computed_style(page, "body", "font-family")
+        record("V04", "Tipografía Open Sans en body",
+               ff is not None and "Open Sans" in ff, f"actual: {ff}")
 
         try:
             await expect(page.locator("text=Vigilada MinEducación").first).to_be_visible(timeout=3000)
@@ -256,6 +261,55 @@ async def main():
             record("V18", "Créditos del equipo visibles en footer", True)
         except Exception as e:
             record("V18", "Créditos del equipo visibles en footer", False, str(e)[:80])
+
+        # ============================================
+        # ESCENARIO 6 — Logo oficial UdeM en sus 3 contextos
+        # ============================================
+        print("\n  Escenario 6 — Logo oficial UdeM (login/navbar/footer)")
+        await logout(page)
+        await page.goto(f"{BASE_URL}/login")
+        await page.wait_for_load_state("domcontentloaded")
+        try:
+            logo = page.locator(".marca-institucional img").first
+            await expect(logo).to_be_visible(timeout=5000)
+            src = await logo.get_attribute("src") or ""
+            box = await logo.bounding_box()
+            h = box["height"] if box else 0
+            ok = "logosimbolo-udem-color.png" in src and h >= 60
+            record("V19", "Login: logo color, height >= 60",
+                   ok, f"src={src.rsplit('/', 1)[-1]} h={h:.0f}")
+            await page.screenshot(path=str(SCREENSHOTS_LOGO_DIR / "19_login_logo.png"))
+        except Exception as e:
+            record("V19", "Login: logo color, height >= 60", False, str(e)[:80])
+
+        await login(page, *USERS["admin"])
+        try:
+            logo = page.locator(".udem-navbar .logosimbolo img").first
+            await expect(logo).to_be_visible(timeout=5000)
+            src = await logo.get_attribute("src") or ""
+            box = await logo.bounding_box()
+            h = box["height"] if box else 0
+            ok = "logosimbolo-udem-color.png" in src and h >= 40
+            record("V20", "Navbar: logo color, height >= 40",
+                   ok, f"src={src.rsplit('/', 1)[-1]} h={h:.0f}")
+            await page.screenshot(path=str(SCREENSHOTS_LOGO_DIR / "20_navbar_logo.png"))
+        except Exception as e:
+            record("V20", "Navbar: logo color, height >= 40", False, str(e)[:80])
+
+        try:
+            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            await page.wait_for_timeout(500)
+            logo = page.locator("footer img").first
+            await expect(logo).to_be_visible(timeout=5000)
+            src = await logo.get_attribute("src") or ""
+            box = await logo.bounding_box()
+            h = box["height"] if box else 0
+            ok = "logosimbolo-udem-blanco.png" in src and h >= 40
+            record("V21", "Footer: logo blanco, height >= 40",
+                   ok, f"src={src.rsplit('/', 1)[-1]} h={h:.0f}")
+            await page.screenshot(path=str(SCREENSHOTS_LOGO_DIR / "21_footer_logo.png"))
+        except Exception as e:
+            record("V21", "Footer: logo blanco, height >= 40", False, str(e)[:80])
 
         await browser.close()
 
