@@ -61,6 +61,60 @@
     </div>
   </div>
 
+  {% if postulacion.evaluacion_ia_ultima %}
+  {% set eval_ia = postulacion.evaluacion_ia_ultima %}
+  {% set dec = eval_ia.decision_sugerida %}
+  {% if dec == 'AUTO_APTO' %}
+    {% set ia_color = 'var(--udem-teal)' %}
+    {% set ia_etiqueta = 'AUTO · APTO' %}
+  {% elif dec == 'AUTO_NO_APTO' %}
+    {% set ia_color = 'var(--udem-rojo)' %}
+    {% set ia_etiqueta = 'AUTO · NO APTO' %}
+  {% else %}
+    {% set ia_color = 'var(--udem-dorado)' %}
+    {% set ia_etiqueta = 'REVISAR MANUAL' %}
+  {% endif %}
+  <div class="udem-card card-evaluacion-ia" data-evaluacion-ia="true" data-decision="{{ dec }}" style="margin-bottom:18px; border-left:4px solid {{ ia_color }};">
+    <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px;">
+      <h3 style="margin:0; font-size:15px; color:var(--udem-negro);">Evaluación automática</h3>
+      <span style="font-size:11px; color:var(--udem-gris-texto); text-transform:uppercase; letter-spacing:0.05em;">
+        modo: {{ eval_ia.modo }} · modelo: {{ eval_ia.modelo }}
+      </span>
+    </div>
+    <div style="margin-top:14px; font-family:var(--font-display); font-size:24px; font-weight:800; color:{{ ia_color }};">
+      {{ ia_etiqueta }}
+    </div>
+    {% set confianza_pct = (eval_ia.confianza * 100) | round(0, 'floor') | int %}
+    <div style="margin-top:10px;">
+      <div style="font-size:11px; color:var(--udem-gris-texto); letter-spacing:0.05em; text-transform:uppercase; margin-bottom:4px;">
+        Confianza: {{ confianza_pct }}%
+      </div>
+      <div style="height:6px; background:var(--udem-borde); border-radius:3px; overflow:hidden;">
+        <div style="height:100%; width:{{ confianza_pct }}%; background:{{ ia_color }};"></div>
+      </div>
+    </div>
+    {% if eval_ia.justificacion %}
+    <p style="margin:14px 0 0; font-size:14px; color:var(--udem-gris-texto); line-height:1.6;">
+      {{ eval_ia.justificacion }}
+    </p>
+    {% endif %}
+    {% if eval_ia.checks %}
+    <ul style="margin:12px 0 0; padding-left:20px; font-size:13px; color:var(--udem-gris-texto);">
+      {% for chk in eval_ia.checks %}
+        <li>
+          {% if chk.ok %}<span style="color:var(--udem-teal); font-weight:700;">✓</span>{% else %}<span style="color:var(--udem-rojo); font-weight:700;">✗</span>{% endif %}
+          {{ chk.regla }}: actual <strong>{{ chk.actual }}</strong>, esperado {{ chk.esperado }}
+        </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    <div style="margin-top:16px; padding:10px 12px; background:var(--udem-crema); border-radius:4px; font-size:12px; color:var(--udem-gris-texto); line-height:1.5;">
+      <strong style="color:var(--udem-negro);">Disclaimer:</strong>
+      Esta es una sugerencia algorítmica. La decisión final corresponde al coordinador o administrador.
+    </div>
+  </div>
+  {% endif %}
+
   {% if postulacion.motivacion %}
   <div class="udem-card" style="margin-bottom:18px;">
     <h3 style="margin:0 0 8px 0; font-size:15px; color:var(--udem-negro);">Motivación del estudiante</h3>

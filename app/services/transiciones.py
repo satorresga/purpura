@@ -133,6 +133,7 @@ def _puede(usuario: User, perfiles: Tuple[str, ...], conv: Convocatoria) -> bool
 TRANSICIONES_POSTULACION: dict[Tuple[str, str], Tuple[str, ...]] = {
     (POST_ENVIADA,     POST_CANCELADA):     ("estudiante_owner",),
     (POST_ENVIADA,     POST_EN_REVISION):   ("admin", "coord_conv_owner"),
+    (POST_EN_REVISION, POST_CANCELADA):     ("estudiante_owner",),
     (POST_EN_REVISION, POST_APROBADA):      ("admin", "coord_conv_owner"),
     (POST_EN_REVISION, POST_RECHAZADA):     ("admin", "coord_conv_owner"),
     (POST_APROBADA,    POST_ADJUDICADA):    ("admin",),

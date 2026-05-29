@@ -576,7 +576,8 @@ async def main():
             await page.wait_for_selector("h1", timeout=8000)
             ids_a_cancelar = []
             filas = await page.locator(
-                "tr[data-postulacion-id][data-postulacion-estado='ENVIADA']"
+                "tr[data-postulacion-id][data-postulacion-estado='ENVIADA'], "
+                "tr[data-postulacion-id][data-postulacion-estado='EN_REVISION']"
             ).all()
             for fila in filas:
                 pid = await fila.get_attribute("data-postulacion-id")
@@ -856,6 +857,88 @@ async def main():
             record(
                 "V41",
                 "Coord/Admin: nota privada queda en historial",
+                False,
+                str(e)[:80],
+            )
+
+        # ============================================
+        # ESCENARIO 12 — Evaluación IA híbrida (P05)
+        # ============================================
+        print("\n  Escenario 12 — Evaluación IA (reglas + Haiku + fallback)")
+        try:
+            cards_ia = await page.locator(".card-evaluacion-ia").count()
+            decisiones = await page.locator(
+                ".card-evaluacion-ia[data-decision]"
+            ).count()
+            disclaimer = await page.locator(
+                "text=La decisión final corresponde al coordinador"
+            ).count()
+            ok = cards_ia >= 1 and decisiones >= 1 and disclaimer >= 1
+            record(
+                "V42",
+                "Detalle postulación: card IA con decisión sugerida + disclaimer",
+                ok,
+                f"cards={cards_ia} decisiones={decisiones} disclaimer={disclaimer}",
+            )
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "42_evaluacion_ia.png"),
+                full_page=False,
+            )
+        except Exception as e:
+            record(
+                "V42",
+                "Detalle postulación: card IA con decisión sugerida + disclaimer",
+                False,
+                str(e)[:80],
+            )
+
+        try:
+            await page.goto(f"{BASE_URL}/bandeja")
+            await page.wait_for_load_state("domcontentloaded")
+            await page.wait_for_selector("h1", timeout=8000)
+            cabeceras_ia = await page.locator(
+                "thead th:text-is('IA')"
+            ).count()
+            badges_ia = await page.locator(
+                "tr[data-postulacion-id] [data-decision]"
+            ).count()
+            ok = cabeceras_ia >= 1 and badges_ia >= 1
+            record(
+                "V43",
+                "Bandeja: columna IA + al menos 1 badge de decisión",
+                ok,
+                f"th_ia={cabeceras_ia} badges={badges_ia}",
+            )
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "43_bandeja_con_ia.png"),
+                full_page=False,
+            )
+        except Exception as e:
+            record(
+                "V43",
+                "Bandeja: columna IA + al menos 1 badge de decisión",
+                False,
+                str(e)[:80],
+            )
+
+        try:
+            await page.goto(f"{BASE_URL}/bandeja?ia=revisar&estado=todas")
+            await page.wait_for_load_state("domcontentloaded")
+            filas_total = await page.locator("tr[data-postulacion-id]").count()
+            filas_revisar = await page.locator(
+                "tr[data-postulacion-id] [data-decision='REVISAR_MANUAL']"
+            ).count()
+            ok = filas_total >= 1 and filas_revisar == filas_total
+            record(
+                "V44",
+                "Bandeja filtro ?ia=revisar muestra solo REVISAR_MANUAL",
+                ok,
+                f"total={filas_total} revisar={filas_revisar}",
+            )
+        except Exception as e:
+            record(
+                "V44",
+                "Bandeja filtro ?ia=revisar muestra solo REVISAR_MANUAL",
                 False,
                 str(e)[:80],
             )

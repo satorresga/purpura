@@ -33,14 +33,23 @@
         <option value="todas"        {% if filtro_estado == 'todas' %}selected{% endif %}>TODAS (incluye resueltas)</option>
       </select>
     </div>
-    <div class="col-md-3">
-      <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+    <div class="col-md-2">
+      <label for="filtro-ia">Sugerencia IA</label>
+      <select id="filtro-ia" name="ia" class="form-select">
+        <option value=""        {% if not filtro_ia %}selected{% endif %}>— Todas —</option>
+        <option value="apto"    {% if filtro_ia == 'apto' %}selected{% endif %}>AUTO_APTO</option>
+        <option value="no_apto" {% if filtro_ia == 'no_apto' %}selected{% endif %}>AUTO_NO_APTO</option>
+        <option value="revisar" {% if filtro_ia == 'revisar' %}selected{% endif %}>REVISAR_MANUAL</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-top:24px;">
         <input type="checkbox" name="warning" value="true" {% if filtro_warning %}checked{% endif %}>
-        Solo con validación manual pendiente
+        Con warning manual
       </label>
     </div>
-    <div class="col-md-2" style="text-align:right;">
-      <button type="submit" class="btn-udem" style="width:100%;">Filtrar</button>
+    <div class="col-md-1" style="text-align:right;">
+      <button type="submit" class="btn-udem" style="width:100%; margin-top:18px;">Filtrar</button>
     </div>
   </div>
 </form>
@@ -53,6 +62,7 @@
       <th>Convocatoria</th>
       <th>Estado</th>
       <th>Recibida</th>
+      <th>IA</th>
       <th>Validación</th>
       <th>Acciones</th>
     </tr>
@@ -71,6 +81,20 @@
       <td><span class="badge-estado badge-{{ p.estado | lower | replace('_', '-') }}">{{ p.estado }}</span></td>
       <td style="font-size:12px; color:var(--udem-gris-texto);">
         {{ p.created_at.strftime('%d %b %Y · %H:%M') }}
+      </td>
+      <td>
+        {% if p.evaluacion %}
+          {% set dec = p.evaluacion.decision_sugerida %}
+          {% if dec == 'AUTO_APTO' %}
+            <span data-decision="AUTO_APTO" class="badge-ia-apto" style="background:rgba(91,176,168,0.18); color:#1F5D5B; padding:3px 9px; border-radius:4px; font-size:10px; font-weight:700; letter-spacing:0.05em;">APTO</span>
+          {% elif dec == 'AUTO_NO_APTO' %}
+            <span data-decision="AUTO_NO_APTO" class="badge-ia-no-apto" style="background:rgba(200,32,45,0.12); color:var(--udem-rojo-oscuro); padding:3px 9px; border-radius:4px; font-size:10px; font-weight:700; letter-spacing:0.05em;">NO APTO</span>
+          {% else %}
+            <span data-decision="REVISAR_MANUAL" class="badge-ia-revisar" style="background:rgba(180,178,169,0.20); color:var(--udem-gris-texto); padding:3px 9px; border-radius:4px; font-size:10px; font-weight:700; letter-spacing:0.05em;">REVISAR</span>
+          {% endif %}
+        {% else %}
+          <span style="color:var(--udem-gris-claro); font-size:11px;">—</span>
+        {% endif %}
       </td>
       <td>
         {% if p.tiene_warning %}

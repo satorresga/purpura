@@ -12,6 +12,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from sqlalchemy import text as sa_text
 
+from app.services.evaluacion_ia import evaluar_postulacion
 from app.services.transiciones import (
     POST_CANCELADA,
     POST_EN_REVISION,
@@ -511,7 +512,7 @@ def convocatorias_detalle(
         if conv.status == ConvocatoriaStatus.PUBLICADA:
             if postulacion_activa is None:
                 puede_postular = True
-            elif postulacion_activa.estado == POST_ENVIADA:
+            elif postulacion_activa.estado in (POST_ENVIADA, POST_EN_REVISION):
                 puede_cancelar_postulacion = True
 
     return templates.TemplateResponse(
@@ -760,6 +761,30 @@ _MOTIVACION_DEFAULT = (
 )
 
 
+def _registrar_evaluacion_ia(
+    postulacion: Postulacion,
+    convocatoria: Convocatoria,
+    estudiante: User,
+    user: User,
+    trigger: str,
+) -> dict:
+    """Ejecuta evaluación y persiste en el objeto. Caller hace commit."""
+    resultado = evaluar_postulacion(postulacion, convocatoria, estudiante)
+    postulacion.evaluacion_ia_ultima = resultado
+    historial = list(postulacion.historial_estados or [])
+    historial.append(
+        {
+            "tipo": "evaluacion_ia",
+            "trigger": trigger,
+            "by_user_id": str(user.id),
+            "by_email": user.email,
+            **resultado,
+        }
+    )
+    postulacion.historial_estados = historial
+    return resultado
+
+
 @app.post("/convocatorias/{conv_id}/postular")
 def postular_post(
     request: Request,
@@ -829,6 +854,8 @@ def postular_post(
     session.add(postulacion)
     session.flush()
 
+    _registrar_evaluacion_ia(postulacion, conv, user, user, trigger="postular")
+
     notif = Notificacion(
         usuario_id=conv.created_by,
         titulo=f"Nueva postulación en {conv.codigo}",
@@ -885,7 +912,7 @@ def mis_postulaciones(
             "convocatoria_status": conv.status.value,
             "facultad": facultad_obj,
             "puede_cancelar": (
-                post.estado == POST_ENVIADA
+                post.estado in (POST_ENVIADA, POST_EN_REVISION)
                 and conv.status == ConvocatoriaStatus.PUBLICADA
             ),
         }
@@ -979,6 +1006,7 @@ def bandeja(
     convocatoria: Optional[str] = None,
     estado: str = "activas",
     warning: Optional[str] = None,
+    ia: Optional[str] = None,
     user: User = Depends(
         require_role(UserRole.COORDINADOR, UserRole.ADMINISTRADOR)
     ),
@@ -1035,6 +1063,19 @@ def bandeja(
                 )
             )
 
+        ia_filtro = (ia or "").lower()
+        _IA_MAP = {
+            "apto": "AUTO_APTO",
+            "no_apto": "AUTO_NO_APTO",
+            "revisar": "REVISAR_MANUAL",
+        }
+        if ia_filtro in _IA_MAP:
+            stmt = stmt.where(
+                sa_text(
+                    "postulaciones.evaluacion_ia_ultima->>'decision_sugerida' = :decision"
+                ).bindparams(decision=_IA_MAP[ia_filtro])
+            )
+
         rows = session.exec(
             stmt.order_by(Postulacion.created_at.desc())
         ).all()
@@ -1053,6 +1094,7 @@ def bandeja(
                     isinstance(ev, dict) and ev.get("manual_review") is True
                     for ev in (post.historial_estados or [])
                 ),
+                "evaluacion": post.evaluacion_ia_ultima,
             }
             for post, conv, estudiante in rows
         ]
@@ -1067,6 +1109,7 @@ def bandeja(
             "filtro_estado": (estado or "activas").lower(),
             "filtro_convocatoria": convocatoria or "",
             "filtro_warning": warning == "true",
+            "filtro_ia": (ia or "").lower(),
         },
     )
 
@@ -1134,7 +1177,7 @@ def postulacion_transicionar(
     ),
     session: Session = Depends(get_session),
 ):
-    post, conv, _est = _load_postulacion_or_404(session, post_id, user)
+    post, conv, estudiante = _load_postulacion_or_404(session, post_id, user)
     estado_origen = post.estado
     try:
         transicionar_postulacion(
@@ -1146,6 +1189,11 @@ def postulacion_transicionar(
     except PermisoInsuficienteError as e:
         _flash(request, "danger", f"Permiso insuficiente: {e}")
         return RedirectResponse(f"/postulaciones/{post.id}", status_code=303)
+
+    if post.estado == POST_EN_REVISION:
+        _registrar_evaluacion_ia(
+            post, conv, estudiante, user, trigger="iniciar_revision"
+        )
 
     session.add(post)
     session.commit()
