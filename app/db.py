@@ -33,6 +33,9 @@ def run_migrations() -> None:
             "ON postulaciones (convocatoria_id, estudiante_id) "
             "WHERE estado <> 'CANCELADA'"
         ),
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS promedio_acumulado NUMERIC(3,2)",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS creditos_aprobados INTEGER",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS semestre_actual INTEGER",
     ]
     with engine.begin() as conn:
         for stmt in column_statements:

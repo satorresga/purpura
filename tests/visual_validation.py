@@ -1210,6 +1210,143 @@ async def main():
                 str(e)[:80],
             )
 
+        # ============================================
+        # ESCENARIO 14 — Bifurcación IA reglas vs LLM (P05.5)
+        # ============================================
+        print("\n  Escenario 14 — Bifurcación reglas/LLM según datos del User")
+
+        async def _cleanup_postular_y_abrir_detalle(
+            email: str, password: str, motivacion: str
+        ):
+            """Cancela activas del estudiante, postula a la primera conv
+            PUBLICADA del seed donde NO tenga ya postulación activa, y
+            retorna el href del detalle de la postulación (vista admin).
+            """
+            await logout(page)
+            await login(page, email, password)
+            await page.goto(f"{BASE_URL}/mis-postulaciones")
+            await page.wait_for_load_state("domcontentloaded")
+            filas_activas = await page.locator(
+                "tr[data-postulacion-id][data-postulacion-estado='ENVIADA'], "
+                "tr[data-postulacion-id][data-postulacion-estado='EN_REVISION']"
+            ).all()
+            for fila in filas_activas:
+                pid = await fila.get_attribute("data-postulacion-id")
+                if pid:
+                    await page.request.post(
+                        f"{BASE_URL}/postulaciones/{pid}/cancelar"
+                    )
+
+            await page.goto(f"{BASE_URL}/convocatorias")
+            await page.wait_for_load_state("domcontentloaded")
+            filas_conv = await page.locator(
+                "tr[data-conv-id][data-conv-status='publicada']"
+            ).all()
+            postulado_ok = False
+            for fila in filas_conv:
+                cid = await fila.get_attribute("data-conv-id")
+                if not cid:
+                    continue
+                resp = await page.request.post(
+                    f"{BASE_URL}/convocatorias/{cid}/postular",
+                    form={"motivacion": motivacion},
+                    max_redirects=0,
+                )
+                location = resp.headers.get("location", "")
+                if resp.status in (303, 302) and "mis-postulaciones" in location:
+                    postulado_ok = True
+                    break
+            if not postulado_ok:
+                return None
+
+            await logout(page)
+            await login(page, *USERS["admin"])
+            await page.goto(
+                f"{BASE_URL}/bandeja?estado=enviada"
+            )
+            await page.wait_for_load_state("domcontentloaded")
+            primer = page.locator(
+                "tr[data-postulacion-id][data-postulacion-estado='ENVIADA'] "
+                "a[href^='/postulaciones/']"
+            ).first
+            href = await primer.get_attribute("href")
+            if not href:
+                return None
+            await primer.click()
+            await page.wait_for_load_state("domcontentloaded")
+            await page.wait_for_selector(".card-evaluacion-ia", timeout=10000)
+            return href
+
+        try:
+            href_v49 = await _cleanup_postular_y_abrir_detalle(
+                "estudiante1@udem.edu.co",
+                "Estudiante2026!",
+                "V49 estudiante1 datos completos",
+            )
+            if not href_v49:
+                raise RuntimeError("No se pudo crear postulación para estudiante1")
+            cuerpo = (await page.text_content("body") or "").lower()
+            modelo_reglas = "reglas-v1" in cuerpo
+            modo_reglas = "modo: reglas" in cuerpo
+            checks_visible = await page.locator(
+                ".card-evaluacion-ia ul li"
+            ).count()
+            ok = modelo_reglas and modo_reglas and checks_visible >= 1
+            record(
+                "V49",
+                "Estudiante con datos completos → modo=reglas con checks",
+                ok,
+                (
+                    f"modelo_reglas={modelo_reglas} modo_reglas={modo_reglas} "
+                    f"checks_visibles={checks_visible}"
+                ),
+            )
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "49_evaluacion_reglas.png"),
+                full_page=False,
+            )
+        except Exception as e:
+            record(
+                "V49",
+                "Estudiante con datos completos → modo=reglas con checks",
+                False,
+                str(e)[:80],
+            )
+
+        try:
+            href_v50 = await _cleanup_postular_y_abrir_detalle(
+                "estudiante3@udem.edu.co",
+                "Estudiante2026!",
+                "V50 estudiante3 datos NULL",
+            )
+            if not href_v50:
+                raise RuntimeError("No se pudo crear postulación para estudiante3")
+            cuerpo = (await page.text_content("body") or "").lower()
+            modo_reglas = "modo: reglas" in cuerpo
+            modo_llm = "modo: llm" in cuerpo
+            modo_fallback = "modo: fallback" in cuerpo
+            ok = (not modo_reglas) and (modo_llm or modo_fallback)
+            record(
+                "V50",
+                "Estudiante con datos NULL → modo=llm o fallback (no reglas)",
+                ok,
+                (
+                    f"modo_reglas={modo_reglas} modo_llm={modo_llm} "
+                    f"modo_fallback={modo_fallback}"
+                ),
+            )
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "50_evaluacion_llm.png"),
+                full_page=False,
+            )
+        except Exception as e:
+            record(
+                "V50",
+                "Estudiante con datos NULL → modo=llm o fallback (no reglas)",
+                False,
+                str(e)[:80],
+            )
+
         await browser.close()
 
     # ============================================

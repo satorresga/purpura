@@ -33,6 +33,9 @@ class User(SQLModel, table=True):
     role: UserRole = Field(index=True)
     is_active: bool = Field(default=True)
     last_login_at: Optional[datetime] = None
+    promedio_acumulado: Optional[float] = Field(default=None)
+    creditos_aprobados: Optional[int] = Field(default=None)
+    semestre_actual: Optional[int] = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

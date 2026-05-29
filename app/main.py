@@ -227,6 +227,101 @@ def dashboard(
     )
 
 
+@app.get("/perfil")
+def perfil_get(
+    request: Request,
+    user: User = Depends(require_role(UserRole.ESTUDIANTE)),
+):
+    form = {
+        "promedio_acumulado": (
+            "" if user.promedio_acumulado is None
+            else f"{user.promedio_acumulado:g}"
+        ),
+        "creditos_aprobados": (
+            "" if user.creditos_aprobados is None else str(user.creditos_aprobados)
+        ),
+        "semestre_actual": (
+            "" if user.semestre_actual is None else str(user.semestre_actual)
+        ),
+    }
+    return templates.TemplateResponse(
+        request,
+        "perfil.html",
+        {"user": user, "form": form, "error": None},
+    )
+
+
+@app.post("/perfil")
+def perfil_post(
+    request: Request,
+    promedio_acumulado: Optional[str] = Form(None),
+    creditos_aprobados: Optional[str] = Form(None),
+    semestre_actual: Optional[str] = Form(None),
+    user: User = Depends(require_role(UserRole.ESTUDIANTE)),
+    session: Session = Depends(get_session),
+):
+    form_data = {
+        "promedio_acumulado": promedio_acumulado or "",
+        "creditos_aprobados": creditos_aprobados or "",
+        "semestre_actual": semestre_actual or "",
+    }
+
+    def render_error(msg: str):
+        return templates.TemplateResponse(
+            request,
+            "perfil.html",
+            {"user": user, "form": form_data, "error": msg},
+            status_code=200,
+        )
+
+    def _parse_int(value: Optional[str]) -> Optional[int]:
+        if value is None or value.strip() == "":
+            return None
+        return int(value.strip())
+
+    def _parse_float(value: Optional[str]) -> Optional[float]:
+        if value is None or value.strip() == "":
+            return None
+        return float(value.strip())
+
+    try:
+        promedio_val = _parse_float(promedio_acumulado)
+        creditos_val = _parse_int(creditos_aprobados)
+        semestre_val = _parse_int(semestre_actual)
+    except (ValueError, TypeError):
+        return render_error("Algún valor no es un número válido.")
+
+    if promedio_val is not None and not (0.0 <= promedio_val <= 5.0):
+        return render_error("El promedio debe estar entre 0.0 y 5.0.")
+    if creditos_val is not None and creditos_val < 0:
+        return render_error("Los créditos aprobados no pueden ser negativos.")
+    if semestre_val is not None and not (1 <= semestre_val <= 12):
+        return render_error("El semestre debe estar entre 1 y 12.")
+
+    user.promedio_acumulado = promedio_val
+    user.creditos_aprobados = creditos_val
+    user.semestre_actual = semestre_val
+    user.updated_at = datetime.utcnow()
+    session.add(user)
+    session.commit()
+
+    log_audit(
+        session,
+        user_id=user.id,
+        action="ACTUALIZAR_PERFIL",
+        request=request,
+        entity_type="user",
+        entity_id=user.id,
+        payload={
+            "promedio": promedio_val,
+            "creditos": creditos_val,
+            "semestre": semestre_val,
+        },
+    )
+    _flash(request, "success", "Datos académicos actualizados.")
+    return RedirectResponse("/perfil", status_code=303)
+
+
 @app.get("/convocatorias")
 def convocatorias_list(
     request: Request,
@@ -875,13 +970,24 @@ def postular_post(
         },
     ]
 
+    promedio_para_postulacion = float(user.promedio_acumulado or 0.0)
+    if user.promedio_acumulado is not None:
+        justificacion_auto = (
+            f"Datos académicos disponibles en perfil del estudiante "
+            f"(promedio {user.promedio_acumulado})."
+        )
+    else:
+        justificacion_auto = (
+            "Datos académicos del estudiante no disponibles en perfil; "
+            "requiere revisión manual."
+        )
     postulacion = Postulacion(
         convocatoria_id=conv.id,
         estudiante_id=user.id,
-        promedio_acumulado=0.0,
+        promedio_acumulado=promedio_para_postulacion,
         motivacion=motivacion_final,
         decision_automatica="REVISAR",
-        justificacion_automatica="Datos académicos del estudiante no disponibles en el modelo User; requiere revisión manual.",
+        justificacion_automatica=justificacion_auto,
         estado=POST_ENVIADA,
         historial_estados=historial_inicial,
     )

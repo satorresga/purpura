@@ -93,6 +93,13 @@ def _seed_materias(session: Session) -> tuple[int, int]:
     return created, existing
 
 
+_DATOS_ACADEMICOS = {
+    "estudiante1@udem.edu.co": (4.5, 80, 6),
+    "estudiante2@udem.edu.co": (3.2, 60, 5),
+    "estudiante3@udem.edu.co": (None, None, None),
+}
+
+
 def _seed_users(session: Session) -> tuple[int, int]:
     created = existing = 0
     for email, password, full_name, role in SEED_USERS:
@@ -108,6 +115,16 @@ def _seed_users(session: Session) -> tuple[int, int]:
             )
         )
         created += 1
+    session.commit()
+
+    for email, (promedio, creditos, semestre) in _DATOS_ACADEMICOS.items():
+        user = session.exec(select(User).where(User.email == email)).first()
+        if user is None:
+            continue
+        user.promedio_acumulado = promedio
+        user.creditos_aprobados = creditos
+        user.semestre_actual = semestre
+        session.add(user)
     session.commit()
     return created, existing
 

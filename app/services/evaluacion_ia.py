@@ -52,36 +52,74 @@ def _utcnow_iso() -> str:
     return datetime.utcnow().isoformat()
 
 
-def _aplicar_reglas(postulacion, convocatoria) -> tuple[bool, list[dict]]:
-    """Retorna (datos_suficientes_para_decidir, checks).
+def _datos_academicos_completos(estudiante) -> bool:
+    """STRICT: los 3 campos del User deben estar no-NULL para activar reglas.
 
-    Solo aplica reglas cuando la convocatoria publica `promedio_minimo`
-    y el estudiante reportó `promedio_acumulado > 0`. Los créditos y
-    semestre no están disponibles en el modelo User → se delegan al LLM.
+    Si falta uno, la evaluación cae al LLM. Evita validaciones parciales
+    engañosas (ej: aprobar solo por promedio sin haber validado créditos).
+    """
+    return (
+        getattr(estudiante, "promedio_acumulado", None) is not None
+        and getattr(estudiante, "creditos_aprobados", None) is not None
+        and getattr(estudiante, "semestre_actual", None) is not None
+    )
+
+
+def _aplicar_reglas(estudiante, convocatoria) -> list[dict]:
+    """Construye la lista de checks aplicables según `convocatoria.requisitos`.
+
+    Asume que `_datos_academicos_completos(estudiante)` es True. Solo
+    añade un check si la convocatoria publica el requisito correspondiente.
     """
     checks: list[dict] = []
     requisitos = convocatoria.requisitos or {}
 
-    promedio_minimo = requisitos.get("promedio_minimo")
-    promedio_actual = postulacion.promedio_acumulado or 0.0
+    if requisitos.get("promedio_minimo") is not None:
+        try:
+            minimo = float(requisitos["promedio_minimo"])
+            actual = float(estudiante.promedio_acumulado)
+            checks.append(
+                {
+                    "regla": "promedio_minimo",
+                    "esperado": f">= {minimo:.1f}",
+                    "actual": round(actual, 2),
+                    "ok": actual >= minimo,
+                }
+            )
+        except (TypeError, ValueError):
+            pass
 
-    if promedio_minimo is None or promedio_actual <= 0:
-        return False, checks
+    if requisitos.get("creditos_minimos") is not None:
+        try:
+            minimo = int(requisitos["creditos_minimos"])
+            actual = int(estudiante.creditos_aprobados)
+            checks.append(
+                {
+                    "regla": "creditos_minimos",
+                    "esperado": f">= {minimo}",
+                    "actual": actual,
+                    "ok": actual >= minimo,
+                }
+            )
+        except (TypeError, ValueError):
+            pass
 
-    try:
-        minimo = float(promedio_minimo)
-    except (TypeError, ValueError):
-        return False, checks
+    if requisitos.get("semestre_minimo") is not None:
+        try:
+            minimo = int(requisitos["semestre_minimo"])
+            actual = int(estudiante.semestre_actual)
+            checks.append(
+                {
+                    "regla": "semestre_minimo",
+                    "esperado": f">= {minimo}",
+                    "actual": actual,
+                    "ok": actual >= minimo,
+                }
+            )
+        except (TypeError, ValueError):
+            pass
 
-    checks.append(
-        {
-            "regla": "promedio_minimo",
-            "esperado": f">= {minimo:.1f}",
-            "actual": round(float(promedio_actual), 2),
-            "ok": float(promedio_actual) >= minimo,
-        }
-    )
-    return True, checks
+    return checks
 
 
 def _resumen_reglas(checks: list[dict]) -> str:
@@ -104,6 +142,10 @@ def _construir_user_message(postulacion, convocatoria, estudiante) -> str:
     if getattr(convocatoria, "facultad", None):
         facultad_nombre = convocatoria.facultad
 
+    promedio = getattr(estudiante, "promedio_acumulado", None)
+    creditos = getattr(estudiante, "creditos_aprobados", None)
+    semestre = getattr(estudiante, "semestre_actual", None)
+
     return (
         f"Convocatoria: {convocatoria.titulo}\n"
         f"Código: {convocatoria.codigo}\n"
@@ -114,10 +156,12 @@ def _construir_user_message(postulacion, convocatoria, estudiante) -> str:
         f"Estudiante:\n"
         f"- Email: {estudiante.email}\n"
         f"- Nombre: {estudiante.full_name or 'no especificado'}\n"
-        f"- Promedio acumulado declarado: "
-        f"{postulacion.promedio_acumulado if postulacion.promedio_acumulado else 'no registrado'}\n"
-        f"- Créditos aprobados: no disponible en el sistema\n"
-        f"- Semestre actual: no disponible en el sistema\n\n"
+        f"- Promedio acumulado: "
+        f"{promedio if promedio is not None else 'no registrado'}\n"
+        f"- Créditos aprobados: "
+        f"{creditos if creditos is not None else 'no registrado'}\n"
+        f"- Semestre actual: "
+        f"{semestre if semestre is not None else 'no registrado'}\n\n"
         f"Motivación del estudiante:\n{postulacion.motivacion or 'no proporcionada'}\n\n"
         "Evalúa según las reglas y responde JSON."
     )
@@ -214,28 +258,31 @@ def evaluar_postulacion(
 ) -> dict[str, Any]:
     """Evalúa una postulación y retorna un dict serializable.
 
-    Nunca lanza excepción al caller: si todo falla, retorna fallback
-    con decision_sugerida='REVISAR_MANUAL'.
+    Bifurcación strict:
+    - Si los 3 campos académicos del User están no-NULL → modo reglas.
+    - Sino → modo LLM (con fallback REVISAR_MANUAL si la API falla).
+
+    Nunca lanza excepción al caller.
     """
     base = {"evaluado_at": _utcnow_iso()}
 
-    try:
-        suficientes, checks = _aplicar_reglas(postulacion, convocatoria)
-    except Exception as exc:  # defensivo total
-        LOGGER.warning("Falla aplicando reglas: %s", exc)
-        suficientes, checks = False, []
-
-    if suficientes:
-        todos_ok = all(c["ok"] for c in checks)
-        return {
-            **base,
-            "decision_sugerida": "AUTO_APTO" if todos_ok else "AUTO_NO_APTO",
-            "confianza": 1.0,
-            "modo": "reglas",
-            "justificacion": _resumen_reglas(checks),
-            "checks": checks,
-            "modelo": "reglas-v1",
-        }
+    if _datos_academicos_completos(estudiante):
+        try:
+            checks = _aplicar_reglas(estudiante, convocatoria)
+        except Exception as exc:
+            LOGGER.warning("Falla aplicando reglas: %s", exc)
+            checks = []
+        if checks:
+            todos_ok = all(c["ok"] for c in checks)
+            return {
+                **base,
+                "decision_sugerida": "AUTO_APTO" if todos_ok else "AUTO_NO_APTO",
+                "confianza": 1.0,
+                "modo": "reglas",
+                "justificacion": _resumen_reglas(checks),
+                "checks": checks,
+                "modelo": "reglas-v1",
+            }
 
     try:
         llm_result = _invocar_haiku(postulacion, convocatoria, estudiante)

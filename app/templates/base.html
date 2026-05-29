@@ -45,6 +45,7 @@
         <a href="/convocatorias" {% if '/convocatorias' in request.url.path %}class="active"{% endif %}>Convocatorias</a>
         <a href="/mis-postulaciones" {% if 'postulaciones' in request.url.path %}class="active"{% endif %}>Mis postulaciones</a>
         <a href="/mis-monitorias" {% if 'monitorias' in request.url.path %}class="active"{% endif %}>Mis monitorías</a>
+        <a href="/perfil" {% if '/perfil' in request.url.path %}class="active"{% endif %}>Mi perfil</a>
       {% endif %}
       {% if rol in ['administrador', 'coordinador'] %}
         <a href="/bandeja" {% if '/bandeja' in request.url.path or '/postulaciones/' in request.url.path %}class="active"{% endif %}>Bandeja</a>

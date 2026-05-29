@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Mi perfil · PÚRPURA{% endblock %}
+
+{% block content %}
+<h1 class="udem-section-title">Mi perfil académico</h1>
+<p class="udem-section-subtitle">
+  Tus datos académicos sirven para que el sistema evalúe automáticamente si cumplís los requisitos al postular.
+  Los 3 campos son opcionales. Si dejás alguno vacío, tu postulación va a revisión manual del coordinador.
+</p>
+
+<div class="udem-card" style="max-width: 540px;">
+  {% if error %}
+  <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:18px;">
+    <div>
+      <div style="font-size:11px; color:var(--udem-gris-texto); text-transform:uppercase; letter-spacing:0.05em;">Email</div>
+      <div style="font-size:14px;">{{ user.email }}</div>
+    </div>
+    <div>
+      <div style="font-size:11px; color:var(--udem-gris-texto); text-transform:uppercase; letter-spacing:0.05em;">Nombre</div>
+      <div style="font-size:14px;">{{ user.full_name }}</div>
+    </div>
+  </div>
+
+  <form method="post" action="/perfil" novalidate>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label for="promedio_acumulado">Promedio acumulado (0.0 – 5.0)</label>
+      <input type="number" class="form-control" id="promedio_acumulado" name="promedio_acumulado"
+             step="0.01" min="0" max="5"
+             value="{{ form.promedio_acumulado }}"
+             placeholder="ej. 4.2">
+    </div>
+
+    <div class="form-group" style="margin-bottom:14px;">
+      <label for="creditos_aprobados">Créditos aprobados</label>
+      <input type="number" class="form-control" id="creditos_aprobados" name="creditos_aprobados"
+             min="0" step="1"
+             value="{{ form.creditos_aprobados }}"
+             placeholder="ej. 80">
+    </div>
+
+    <div class="form-group" style="margin-bottom:18px;">
+      <label for="semestre_actual">Semestre actual (1 – 12)</label>
+      <input type="number" class="form-control" id="semestre_actual" name="semestre_actual"
+             min="1" max="12" step="1"
+             value="{{ form.semestre_actual }}"
+             placeholder="ej. 6">
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <a href="/dashboard" class="btn-udem-outline">Cancelar</a>
+      <button type="submit" class="btn-udem" data-accion="guardar-perfil">Guardar</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
