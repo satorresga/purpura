@@ -33,6 +33,7 @@ package = true
 
 [dependency-groups]
 dev = [
+    "markdown>=3.10.2",
     "numpy>=2.4.6",
     "pillow>=12.2.0",
     "playwright>=1.59.0",

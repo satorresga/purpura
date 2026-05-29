@@ -29,4 +29,9 @@ tests/uvicorn_e2e.log
 tests/screenshots/p01_validation/
 tests/screenshots/p01_logo_smoke/
 tests/screenshots/p015b_smoke/
+tests/screenshots/e2e_release1/
+tests/screenshots/verify_ia_real.png
+
+# Documento HTML intermedio del PDF de entrega (se regenera con el script)
+docs/entrega/entrega_release1.html
 
