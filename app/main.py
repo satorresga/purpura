@@ -10,8 +10,11 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 from starlette.middleware.sessions import SessionMiddleware
 
+from sqlalchemy import text as sa_text
+
 from app.services.transiciones import (
     POST_CANCELADA,
+    POST_EN_REVISION,
     POST_ENVIADA,
     PermisoInsuficienteError,
     TransicionInvalidaError,
@@ -954,4 +957,260 @@ def postulacion_cancelar(
         f"Postulación a {conv.codigo} cancelada.",
     )
     return RedirectResponse("/mis-postulaciones", status_code=303)
+
+
+# ============================================================
+# Bandeja del coordinador (P04)
+# ============================================================
+
+
+def _puede_ver_postulacion(user: User, conv: Convocatoria) -> bool:
+    """Admin ve todas. Coord ve solo las de convocatorias que creó."""
+    if user.role == UserRole.ADMINISTRADOR:
+        return True
+    if user.role == UserRole.COORDINADOR:
+        return conv.created_by == user.id
+    return False
+
+
+@app.get("/bandeja")
+def bandeja(
+    request: Request,
+    convocatoria: Optional[str] = None,
+    estado: str = "activas",
+    warning: Optional[str] = None,
+    user: User = Depends(
+        require_role(UserRole.COORDINADOR, UserRole.ADMINISTRADOR)
+    ),
+    session: Session = Depends(get_session),
+):
+    convocatorias_stmt = select(Convocatoria).where(
+        Convocatoria.status.in_(
+            [ConvocatoriaStatus.PUBLICADA, ConvocatoriaStatus.CERRADA]
+        )
+    )
+    if user.role == UserRole.COORDINADOR:
+        convocatorias_stmt = convocatorias_stmt.where(
+            Convocatoria.created_by == user.id
+        )
+    convs_visibles = session.exec(
+        convocatorias_stmt.order_by(Convocatoria.codigo)
+    ).all()
+    ids_visibles = [c.id for c in convs_visibles]
+
+    if not ids_visibles:
+        postulaciones: list[dict] = []
+    else:
+        stmt = (
+            select(Postulacion, Convocatoria, User)
+            .join(Convocatoria, Postulacion.convocatoria_id == Convocatoria.id)
+            .join(User, Postulacion.estudiante_id == User.id)
+            .where(Postulacion.convocatoria_id.in_(ids_visibles))
+        )
+
+        estado_norm = (estado or "activas").lower()
+        if estado_norm == "enviada":
+            stmt = stmt.where(Postulacion.estado == POST_ENVIADA)
+        elif estado_norm == "en_revision":
+            stmt = stmt.where(Postulacion.estado == POST_EN_REVISION)
+        elif estado_norm == "todas":
+            pass
+        else:  # activas (default)
+            stmt = stmt.where(
+                Postulacion.estado.in_([POST_ENVIADA, POST_EN_REVISION])
+            )
+
+        if convocatoria:
+            try:
+                conv_uuid = uuid.UUID(convocatoria)
+                stmt = stmt.where(Postulacion.convocatoria_id == conv_uuid)
+            except ValueError:
+                pass
+
+        if warning == "true":
+            stmt = stmt.where(
+                sa_text(
+                    "postulaciones.historial_estados @> "
+                    "'[{\"manual_review\": true}]'::jsonb"
+                )
+            )
+
+        rows = session.exec(
+            stmt.order_by(Postulacion.created_at.desc())
+        ).all()
+        postulaciones = [
+            {
+                "id": post.id,
+                "estado": post.estado,
+                "created_at": post.created_at,
+                "decision_automatica": post.decision_automatica,
+                "convocatoria_id": conv.id,
+                "convocatoria_codigo": conv.codigo,
+                "convocatoria_titulo": conv.titulo,
+                "estudiante_nombre": estudiante.full_name or estudiante.email,
+                "estudiante_email": estudiante.email,
+                "tiene_warning": any(
+                    isinstance(ev, dict) and ev.get("manual_review") is True
+                    for ev in (post.historial_estados or [])
+                ),
+            }
+            for post, conv, estudiante in rows
+        ]
+
+    return templates.TemplateResponse(
+        request,
+        "bandeja.html",
+        {
+            "user": user,
+            "postulaciones": postulaciones,
+            "convocatorias_filtro": convs_visibles,
+            "filtro_estado": (estado or "activas").lower(),
+            "filtro_convocatoria": convocatoria or "",
+            "filtro_warning": warning == "true",
+        },
+    )
+
+
+def _load_postulacion_or_404(
+    session: Session, post_id: int, user: User
+) -> tuple[Postulacion, Convocatoria, User]:
+    row = session.exec(
+        select(Postulacion, Convocatoria, User)
+        .join(Convocatoria, Postulacion.convocatoria_id == Convocatoria.id)
+        .join(User, Postulacion.estudiante_id == User.id)
+        .where(Postulacion.id == post_id)
+    ).first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Postulación no encontrada")
+    post, conv, estudiante = row
+    if not _puede_ver_postulacion(user, conv):
+        raise HTTPException(
+            status_code=403,
+            detail="Solo el coordinador owner o un administrador pueden ver esta postulación.",
+        )
+    return post, conv, estudiante
+
+
+@app.get("/postulaciones/{post_id}")
+def postulacion_detalle(
+    request: Request,
+    post_id: int,
+    user: User = Depends(
+        require_role(UserRole.COORDINADOR, UserRole.ADMINISTRADOR)
+    ),
+    session: Session = Depends(get_session),
+):
+    post, conv, estudiante = _load_postulacion_or_404(session, post_id, user)
+    puede_iniciar_revision = post.estado == POST_ENVIADA and (
+        user.role == UserRole.ADMINISTRADOR
+        or conv.created_by == user.id
+    )
+    puede_anotar = post.estado == POST_EN_REVISION and (
+        user.role == UserRole.ADMINISTRADOR
+        or conv.created_by == user.id
+    )
+    return templates.TemplateResponse(
+        request,
+        "postulacion_detalle.html",
+        {
+            "user": user,
+            "postulacion": post,
+            "convocatoria": conv,
+            "estudiante": estudiante,
+            "puede_iniciar_revision": puede_iniciar_revision,
+            "puede_anotar": puede_anotar,
+        },
+    )
+
+
+@app.post("/postulaciones/{post_id}/transicionar")
+def postulacion_transicionar(
+    request: Request,
+    post_id: int,
+    nuevo_estado: str = Form(...),
+    motivo: str = Form(""),
+    user: User = Depends(
+        require_role(UserRole.COORDINADOR, UserRole.ADMINISTRADOR)
+    ),
+    session: Session = Depends(get_session),
+):
+    post, conv, _est = _load_postulacion_or_404(session, post_id, user)
+    estado_origen = post.estado
+    try:
+        transicionar_postulacion(
+            post, nuevo_estado.upper(), user, conv, motivo=motivo
+        )
+    except TransicionInvalidaError as e:
+        _flash(request, "danger", f"Transición no permitida: {e}")
+        return RedirectResponse(f"/postulaciones/{post.id}", status_code=303)
+    except PermisoInsuficienteError as e:
+        _flash(request, "danger", f"Permiso insuficiente: {e}")
+        return RedirectResponse(f"/postulaciones/{post.id}", status_code=303)
+
+    session.add(post)
+    session.commit()
+    log_audit(
+        session,
+        user_id=user.id,
+        action=f"POSTULACION_{estado_origen}_TO_{post.estado}",
+        request=request,
+        entity_type="postulacion",
+        entity_id=None,
+        payload={
+            "postulacion_id": post.id,
+            "convocatoria": conv.codigo,
+            "from": estado_origen,
+            "to": post.estado,
+            "motivo": motivo,
+        },
+    )
+    _flash(
+        request,
+        "success",
+        f"Postulación {post.id}: {estado_origen} → {post.estado}.",
+    )
+    return RedirectResponse(f"/postulaciones/{post.id}", status_code=303)
+
+
+@app.post("/postulaciones/{post_id}/nota")
+def postulacion_nota(
+    request: Request,
+    post_id: int,
+    nota: str = Form(...),
+    user: User = Depends(
+        require_role(UserRole.COORDINADOR, UserRole.ADMINISTRADOR)
+    ),
+    session: Session = Depends(get_session),
+):
+    post, conv, _est = _load_postulacion_or_404(session, post_id, user)
+    nota_limpia = (nota or "").strip()
+    if not nota_limpia:
+        _flash(request, "warning", "La nota no puede estar vacía.")
+        return RedirectResponse(f"/postulaciones/{post.id}", status_code=303)
+
+    historial = list(post.historial_estados or [])
+    historial.append(
+        {
+            "tipo": "nota_coord",
+            "by_user_id": str(user.id),
+            "by_email": user.email,
+            "nota": nota_limpia,
+            "at": datetime.utcnow().isoformat(),
+        }
+    )
+    post.historial_estados = historial
+    post.updated_at = datetime.utcnow()
+    session.add(post)
+    session.commit()
+    log_audit(
+        session,
+        user_id=user.id,
+        action="POSTULACION_NOTA",
+        request=request,
+        entity_type="postulacion",
+        entity_id=None,
+        payload={"postulacion_id": post.id, "convocatoria": conv.codigo},
+    )
+    _flash(request, "success", "Nota agregada al historial.")
+    return RedirectResponse(f"/postulaciones/{post.id}", status_code=303)
 

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Postulación #{{ postulacion.id }} · PÚRPURA{% endblock %}
+{% block main_class %}{% endblock %}
+
+{% block content %}
+<section class="hero-rojo" style="padding:48px 0;">
+  <div class="contenedor">
+    <div class="breadcrumb">REVISIÓN DE POSTULACIÓN</div>
+    <h1 style="margin-bottom:8px;">{{ estudiante.full_name or estudiante.email }} → {{ convocatoria.codigo }}</h1>
+    <p class="descripcion">{{ convocatoria.titulo }}</p>
+  </div>
+</section>
+
+<main class="udem-container">
+  {% with messages = request.session.pop('flash', None) %}
+    {% if messages %}
+      {% for level, msg in messages %}
+        <div class="alert alert-{{ level }}">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div style="display:flex; align-items:center; gap:14px; margin-bottom:18px; flex-wrap:wrap;">
+    <a href="/bandeja" style="font-size:13px; color:var(--udem-gris-texto); text-decoration:none;">&larr; Volver a la bandeja</a>
+    <span class="badge-estado badge-{{ postulacion.estado | lower | replace('_', '-') }}" data-postulacion-estado="{{ postulacion.estado }}">{{ postulacion.estado }}</span>
+  </div>
+
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px; margin-bottom:18px;">
+    <div class="udem-card">
+      <h3 style="margin:0 0 12px 0; font-size:15px; color:var(--udem-negro);">Estudiante</h3>
+      <div style="font-size:14px; line-height:1.6;">
+        <div><strong>{{ estudiante.full_name or estudiante.email }}</strong></div>
+        <div style="color:var(--udem-gris-texto);">{{ estudiante.email }}</div>
+        <div style="color:var(--udem-gris-texto); font-size:12px; margin-top:4px;">
+          Rol: {{ estudiante.role.value }}
+        </div>
+      </div>
+    </div>
+
+    <div class="udem-card">
+      <h3 style="margin:0 0 12px 0; font-size:15px; color:var(--udem-negro);">Convocatoria</h3>
+      <div style="font-size:14px; line-height:1.6;">
+        <div><code>{{ convocatoria.codigo }}</code></div>
+        <div><a href="/convocatorias/{{ convocatoria.id }}" style="color:var(--udem-rojo); font-weight:600; text-decoration:none;">{{ convocatoria.titulo }}</a></div>
+        <div style="color:var(--udem-gris-texto); font-size:12px; margin-top:4px;">
+          Semestre {{ convocatoria.semestre }} · {{ convocatoria.cupos }} cupos
+        </div>
+      </div>
+    </div>
+
+    <div class="udem-card" style="border-left:4px solid {% if postulacion.decision_automatica == 'APTA' %}var(--udem-teal){% elif postulacion.decision_automatica == 'NO_APTA' %}var(--udem-rojo){% else %}var(--udem-dorado){% endif %};">
+      <h3 style="margin:0 0 12px 0; font-size:15px; color:var(--udem-negro);">Validación automática</h3>
+      <div style="font-size:14px;">
+        <strong>{{ postulacion.decision_automatica }}</strong>
+        {% if postulacion.justificacion_automatica %}
+          <p style="font-size:13px; color:var(--udem-gris-texto); margin:6px 0 0 0;">
+            {{ postulacion.justificacion_automatica }}
+          </p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if postulacion.motivacion %}
+  <div class="udem-card" style="margin-bottom:18px;">
+    <h3 style="margin:0 0 8px 0; font-size:15px; color:var(--udem-negro);">Motivación del estudiante</h3>
+    <p style="font-size:14px; color:var(--udem-gris-texto); margin:0; line-height:1.6;">
+      {{ postulacion.motivacion }}
+    </p>
+  </div>
+  {% endif %}
+
+  <div class="udem-card" style="margin-bottom:18px;">
+    <h3 style="margin:0 0 12px 0; font-size:15px; color:var(--udem-negro);">Historial</h3>
+    {% if postulacion.historial_estados %}
+    <ul style="list-style:none; padding:0; margin:0;">
+      {% for ev in postulacion.historial_estados %}
+        <li style="padding:10px 0; border-bottom:1px solid var(--udem-borde); font-size:13px;">
+          {% if ev.tipo == 'nota_coord' %}
+            <div style="font-size:11px; color:var(--udem-rojo); font-weight:700; letter-spacing:0.05em;">NOTA DE COORDINACIÓN</div>
+            <div style="margin-top:4px;">{{ ev.nota }}</div>
+            <div style="color:var(--udem-gris-claro); font-size:11px; margin-top:4px;">
+              {{ ev.by_email }} · {{ ev.at }}
+            </div>
+          {% elif ev.tipo == 'validacion_inicial' %}
+            <div style="font-size:11px; color:var(--udem-dorado); font-weight:700; letter-spacing:0.05em;">VALIDACIÓN AUTOMÁTICA</div>
+            <div style="margin-top:4px;">
+              {{ ev.razon }}
+              {% if ev.manual_review %}<span style="color:var(--udem-rojo); font-weight:600;">(requiere revisión manual)</span>{% endif %}
+            </div>
+            <div style="color:var(--udem-gris-claro); font-size:11px; margin-top:4px;">{{ ev.at }}</div>
+          {% else %}
+            <div>
+              <strong>{{ ev.from }}</strong> &rarr; <strong>{{ ev.to }}</strong>
+              {% if ev.motivo %}<span style="color:var(--udem-gris-texto);"> · {{ ev.motivo }}</span>{% endif %}
+            </div>
+            <div style="color:var(--udem-gris-claro); font-size:11px; margin-top:4px;">
+              {{ ev.by_email }} · {{ ev.at }}
+            </div>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p style="font-size:13px; color:var(--udem-gris-texto); margin:0;">Sin eventos registrados.</p>
+    {% endif %}
+  </div>
+
+  {% if puede_iniciar_revision or puede_anotar %}
+  <div class="udem-card" style="border-left:4px solid var(--udem-rojo);">
+    <h3 style="margin:0 0 12px 0; font-size:15px; color:var(--udem-negro); font-family:var(--font-display);">Acciones</h3>
+    {% if puede_iniciar_revision %}
+      <form method="post" action="/postulaciones/{{ postulacion.id }}/transicionar" style="margin:0 0 12px 0;">
+        <input type="hidden" name="nuevo_estado" value="EN_REVISION">
+        <input type="hidden" name="motivo" value="Coordinador toma la postulación para revisión">
+        <button type="submit" class="btn-udem" data-accion="iniciar-revision">Empezar revisión</button>
+      </form>
+      <p style="font-size:12px; color:var(--udem-gris-texto); margin:0;">
+        La postulación pasa a <strong>EN_REVISION</strong>. La decisión final (aprobar/rechazar) viene en una iteración posterior del sistema.
+      </p>
+    {% endif %}
+    {% if puede_anotar %}
+      <form method="post" action="/postulaciones/{{ postulacion.id }}/nota">
+        <label for="nota" style="font-size:13px; color:var(--udem-gris-texto);">Agregar nota privada al historial</label>
+        <textarea id="nota" name="nota" rows="3" style="width:100%; margin-top:6px;" placeholder="Comentario interno (no visible para el estudiante)" required></textarea>
+        <div style="margin-top:10px;">
+          <button type="submit" class="btn-udem-outline" data-accion="guardar-nota">Guardar nota</button>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+  {% endif %}
+</main>
+{% endblock %}

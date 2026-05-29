@@ -47,6 +47,7 @@
         <a href="/mis-monitorias" {% if 'monitorias' in request.url.path %}class="active"{% endif %}>Mis monitorías</a>
       {% endif %}
       {% if rol in ['administrador', 'coordinador'] %}
+        <a href="/bandeja" {% if '/bandeja' in request.url.path or '/postulaciones/' in request.url.path %}class="active"{% endif %}>Bandeja</a>
         <a href="/reportes" {% if '/reportes' in request.url.path %}class="active"{% endif %}>Reportes</a>
       {% endif %}
       {% if rol == 'administrador' %}

@@ -708,6 +708,158 @@ async def main():
                 str(e)[:80],
             )
 
+        # ============================================
+        # ESCENARIO 11 — Bandeja del coordinador (P04)
+        # ============================================
+        print("\n  Escenario 11 — Bandeja coordinador + transición EN_REVISION + nota")
+        await logout(page)
+        await login(page, *USERS["coord"])
+        try:
+            await page.goto(f"{BASE_URL}/bandeja")
+            await page.wait_for_load_state("domcontentloaded")
+            await page.wait_for_selector("h1", timeout=8000)
+            h1_text = await page.locator("h1").first.text_content() or ""
+            filas_bandeja = await page.locator("tr[data-postulacion-id]").count()
+            ok = "andeja" in h1_text.lower() and filas_bandeja >= 1
+            record(
+                "V38",
+                "Coordinador: ve /bandeja con postulaciones de sus convocatorias",
+                ok,
+                f"h1='{h1_text.strip()}' filas={filas_bandeja}",
+            )
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "38_bandeja_coord.png"),
+                full_page=False,
+            )
+        except Exception as e:
+            record(
+                "V38",
+                "Coordinador: ve /bandeja con postulaciones de sus convocatorias",
+                False,
+                str(e)[:80],
+            )
+
+        try:
+            await logout(page)
+            await login(page, *USERS["estudiante"])
+            await page.goto(f"{BASE_URL}/bandeja")
+            await page.wait_for_load_state("domcontentloaded")
+            cuerpo = await page.text_content("body") or ""
+            tabla_postulaciones = await page.locator(
+                "tr[data-postulacion-id]"
+            ).count()
+            es_bloqueo = (
+                "403" in cuerpo
+                or "denegado" in cuerpo.lower()
+                or "permisos" in cuerpo.lower()
+                or tabla_postulaciones == 0
+            )
+            record(
+                "V39",
+                "Estudiante: /bandeja bloqueada (403 o sin tabla)",
+                es_bloqueo,
+                f"tabla_postulaciones={tabla_postulaciones}",
+            )
+        except Exception as e:
+            record(
+                "V39",
+                "Estudiante: /bandeja bloqueada (403 o sin tabla)",
+                False,
+                str(e)[:80],
+            )
+
+        # V40 setup: estudiante1 crea una postulación fresca a una PUBLICADA
+        # (sus postulaciones anteriores quedaron CANCELADA tras V37/V41 previos)
+        try:
+            await logout(page)
+            await login(page, *USERS["estudiante"])
+            await page.goto(f"{BASE_URL}/convocatorias")
+            await page.wait_for_load_state("domcontentloaded")
+            conv_id_setup = None
+            filas_conv = await page.locator("tr[data-conv-id]").all()
+            for fila in filas_conv:
+                conv_id_setup = await fila.get_attribute("data-conv-id")
+                if conv_id_setup:
+                    break
+            if conv_id_setup:
+                await page.request.post(
+                    f"{BASE_URL}/convocatorias/{conv_id_setup}/postular",
+                    form={"motivacion": "V40 setup - postulación fresca para revisión"},
+                )
+        except Exception as e:
+            print(f"    (V40 setup falló sin bloquear) {str(e)[:80]}")
+
+        href_post_v40 = None
+        try:
+            await logout(page)
+            await login(page, *USERS["admin"])
+            await page.goto(f"{BASE_URL}/bandeja?estado=enviada")
+            await page.wait_for_load_state("domcontentloaded")
+            await page.wait_for_selector("tr[data-postulacion-id]", timeout=8000)
+            primera_post = page.locator(
+                "tr[data-postulacion-id][data-postulacion-estado='ENVIADA'] "
+                "a[href^='/postulaciones/']"
+            ).first
+            href_post_v40 = await primera_post.get_attribute("href")
+            await primera_post.click()
+            await page.wait_for_load_state("domcontentloaded")
+            await page.wait_for_selector("h1", timeout=8000)
+            boton_revisar = page.locator(
+                "button[data-accion='iniciar-revision']"
+            ).first
+            await boton_revisar.click()
+            await page.wait_for_load_state("domcontentloaded")
+            badge_revision = await page.locator(
+                "[data-postulacion-estado='EN_REVISION']"
+            ).count()
+            record(
+                "V40",
+                "Admin: transición ENVIADA → EN_REVISION funciona",
+                badge_revision >= 1,
+                f"href={href_post_v40} badges_revision={badge_revision}",
+            )
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "40_postulacion_en_revision.png"),
+                full_page=False,
+            )
+        except Exception as e:
+            record(
+                "V40",
+                "Admin: transición ENVIADA → EN_REVISION funciona",
+                False,
+                str(e)[:80],
+            )
+
+        try:
+            textarea = page.locator("textarea[name='nota']").first
+            if await textarea.count() == 0:
+                raise RuntimeError("textarea[name=nota] no presente")
+            nota_texto = "Validación manual: revisar promedio en sistema académico"
+            await textarea.fill(nota_texto)
+            await page.locator(
+                "button[data-accion='guardar-nota']"
+            ).first.click()
+            await page.wait_for_load_state("domcontentloaded")
+            cuerpo = await page.text_content("body") or ""
+            ok = "Validación manual" in cuerpo
+            record(
+                "V41",
+                "Coord/Admin: nota privada queda en historial",
+                ok,
+                f"nota_en_dom={'Validación manual' in cuerpo}",
+            )
+            await page.screenshot(
+                path=str(SCREENSHOTS_LANDING_DIR / "41_nota_coord.png"),
+                full_page=False,
+            )
+        except Exception as e:
+            record(
+                "V41",
+                "Coord/Admin: nota privada queda en historial",
+                False,
+                str(e)[:80],
+            )
+
         await browser.close()
 
     # ============================================

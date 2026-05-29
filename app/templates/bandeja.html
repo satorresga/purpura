@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Bandeja · PÚRPURA{% endblock %}
+
+{% block content %}
+<h1 class="udem-section-title">Bandeja de postulaciones</h1>
+<p class="udem-section-subtitle">
+  {% if user.role.value == 'administrador' %}
+    Vista global de todas las postulaciones a convocatorias publicadas o cerradas.
+  {% else %}
+    Postulaciones de las convocatorias que coordinas.
+  {% endif %}
+</p>
+
+<form method="get" action="/bandeja" class="udem-card" style="margin-bottom:18px;">
+  <div class="row g-3" style="align-items:end;">
+    <div class="col-md-4">
+      <label for="filtro-conv">Convocatoria</label>
+      <select id="filtro-conv" name="convocatoria" class="form-select">
+        <option value="">— Todas mis convocatorias —</option>
+        {% for c in convocatorias_filtro %}
+          <option value="{{ c.id }}" {% if filtro_convocatoria == c.id|string %}selected{% endif %}>
+            {{ c.codigo }} · {{ c.titulo }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label for="filtro-estado">Estado</label>
+      <select id="filtro-estado" name="estado" class="form-select">
+        <option value="activas"      {% if filtro_estado == 'activas' %}selected{% endif %}>Activas (ENVIADA + EN_REVISION)</option>
+        <option value="enviada"      {% if filtro_estado == 'enviada' %}selected{% endif %}>Solo ENVIADA</option>
+        <option value="en_revision"  {% if filtro_estado == 'en_revision' %}selected{% endif %}>Solo EN_REVISION</option>
+        <option value="todas"        {% if filtro_estado == 'todas' %}selected{% endif %}>TODAS (incluye resueltas)</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+        <input type="checkbox" name="warning" value="true" {% if filtro_warning %}checked{% endif %}>
+        Solo con validación manual pendiente
+      </label>
+    </div>
+    <div class="col-md-2" style="text-align:right;">
+      <button type="submit" class="btn-udem" style="width:100%;">Filtrar</button>
+    </div>
+  </div>
+</form>
+
+{% if postulaciones %}
+<table class="udem-table">
+  <thead>
+    <tr>
+      <th>Estudiante</th>
+      <th>Convocatoria</th>
+      <th>Estado</th>
+      <th>Recibida</th>
+      <th>Validación</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in postulaciones %}
+    <tr data-postulacion-id="{{ p.id }}" data-postulacion-estado="{{ p.estado }}">
+      <td>
+        <strong>{{ p.estudiante_nombre }}</strong><br>
+        <span style="font-size:12px; color:var(--udem-gris-texto);">{{ p.estudiante_email }}</span>
+      </td>
+      <td>
+        <code>{{ p.convocatoria_codigo }}</code><br>
+        <span style="font-size:12px; color:var(--udem-gris-texto);">{{ p.convocatoria_titulo }}</span>
+      </td>
+      <td><span class="badge-estado badge-{{ p.estado | lower | replace('_', '-') }}">{{ p.estado }}</span></td>
+      <td style="font-size:12px; color:var(--udem-gris-texto);">
+        {{ p.created_at.strftime('%d %b %Y · %H:%M') }}
+      </td>
+      <td>
+        {% if p.tiene_warning %}
+          <span style="font-size:11px; color:var(--udem-rojo); font-weight:700;">⚠ Manual</span>
+        {% elif p.decision_automatica == 'APTA' %}
+          <span style="font-size:11px; color:#1F5D5B; font-weight:700;">✓ Auto</span>
+        {% else %}
+          <span style="font-size:11px; color:var(--udem-gris-claro);">{{ p.decision_automatica }}</span>
+        {% endif %}
+      </td>
+      <td>
+        <a href="/postulaciones/{{ p.id }}" class="btn-udem-ghost">Revisar</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="udem-card">
+  <p style="margin:0; color:var(--udem-gris-texto);">
+    No hay postulaciones que coincidan con los filtros.
+  </p>
+</div>
+{% endif %}
+{% endblock %}
